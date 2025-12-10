@@ -41,7 +41,8 @@ body {
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0f172a;
+  background-color: #263d6a;
+  /* background: linear-gradient(rgb(17, 0, 255), rgb(0, 7, 56)); */
   color: #d8e3e7;
   /* New light grayish blue for text */
 }

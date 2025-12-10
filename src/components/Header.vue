@@ -107,7 +107,7 @@ onMounted(() => {
   left: 0;
   width: 100%;
   padding: 0.5rem 0;
-  background-color: rgba(15, 23, 42, 0.8);
+  background-color: rgba(15, 23, 42, 0.349);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: 1000;
@@ -120,7 +120,7 @@ onMounted(() => {
   align-items: center;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1rem;
 }
 
 .logo a {
