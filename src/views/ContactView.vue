@@ -19,7 +19,8 @@
 
 <style scoped>
 .page-wrapper {
-  padding: 120px 0 4rem; /* 80px for header + 40px top padding */
+  padding: 120px 0 4rem;
+  /* 80px for header + 40px top padding */
 }
 
 .page-title {
@@ -27,7 +28,7 @@
   font-weight: 700;
   color: #fff;
   margin-bottom: 3rem;
-  text-align: center;
+  text-align: left;
   border-bottom: 2px solid #5698c3;
   padding-bottom: 1rem;
 }
@@ -59,6 +60,7 @@
 }
 
 .content a:hover {
-  color: #825100; /* New dark gold for hover */
+  color: #825100;
+  /* New dark gold for hover */
 }
 </style>

@@ -3,7 +3,7 @@
     <div class="container">
       <h2 class="page-title">关于我们 / ABOUT US</h2>
       <div class="content">
-        <p>河北东方高校联合是一个由来自河北省内多所高校的东方Project爱好者共同组成的非盈利性社团组织。</p>
+        <p>河北东方高校联合是一个旨在服务于学生同好的公益性组织~</p>
         <p>我们的宗旨是：</p>
         <ul>
           <li>在河北地区推广优秀的东方Project文化。</li>
@@ -21,7 +21,8 @@
 
 <style scoped>
 .page-wrapper {
-  padding: 120px 0 4rem; /* 80px for header + 40px top padding */
+  padding: 120px 0 4rem;
+  /* 80px for header + 40px top padding */
 }
 
 .page-title {
@@ -29,7 +30,7 @@
   font-weight: 700;
   color: #fff;
   margin-bottom: 3rem;
-  text-align: center;
+  text-align: left;
   border-bottom: 2px solid #5698c3;
   padding-bottom: 1rem;
 }

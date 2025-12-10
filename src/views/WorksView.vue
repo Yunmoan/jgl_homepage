@@ -19,7 +19,8 @@
 
 <style scoped>
 .page-wrapper {
-  padding: 120px 0 4rem; /* 80px for header + 40px top padding */
+  padding: 120px 0 4rem;
+  /* 80px for header + 40px top padding */
 }
 
 .page-title {
@@ -27,7 +28,7 @@
   font-weight: 700;
   color: #fff;
   margin-bottom: 3rem;
-  text-align: center;
+  text-align: left;
   border-bottom: 2px solid #5698c3;
   padding-bottom: 1rem;
 }
@@ -54,7 +55,8 @@
 
 .work-placeholder-image {
   height: 180px;
-  background-color: #1e293b; /* Dark slate for placeholder */
+  background-color: #1e293b;
+  /* Dark slate for placeholder */
 }
 
 .work-title {
@@ -66,7 +68,8 @@
 
 .work-description {
   font-size: 0.9rem;
-  color: #94a3b8; /* Lighter gray for description */
+  color: #94a3b8;
+  /* Lighter gray for description */
   padding: 0 1rem 1rem;
   margin: 0;
   line-height: 1.5;
