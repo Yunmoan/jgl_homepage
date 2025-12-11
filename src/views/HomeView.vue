@@ -3,8 +3,11 @@
     <section class="hero">
       <div class="hero-content">
         <h1 class="main-title">幻想，在此交汇</h1>
-        <h2 class="subtitle">河北东方高校联合 / HEBEI COLLEGES AND UNIVERSITIES TOUHOU CLUB UNION</h2>
+        <h2 class="subtitle">河北东方高校联合会 / HEBEI COLLEGES AND UNIVERSITIES TOUHOU CLUB UNION</h2>
         <p class="description">这里是一个为河北地区东方Project爱好者打造的创作与交流社区。</p>
+      </div>
+      <div class="hero-logo">
+        <img src="/logo.png" alt="Logo" />
       </div>
       <div class="scroll-indicator">
         <span>SCROLL</span>
@@ -21,22 +24,42 @@
 <script setup lang="ts"></script>
 
 <style scoped>
+.home-view {
+  background: linear-gradient(rgba(28, 25, 70, 0.3), rgba(125, 29, 74, 0.269)), url('/134678540_p1.jpg') no-repeat center bottom/cover;
+  background-attachment: fixed;
+}
+
 /* .home-view {
   padding-top: 80px;
   Offset for fixed header
 } */
 
 .hero {
-  height: 50vh;
+  height: 100vh;
   /* Full viewport height minus header */
   display: flex;
-  flex-direction: column;
-  align-items: left;
+  align-items: center;
   justify-content: center;
   text-align: left;
   padding: 0 8rem;
-  background: linear-gradient(rgba(28, 25, 70, 0.3), rgba(125, 29, 74, 0.269)), url('public/134678540_p1.jpg') no-repeat center bottom/cover;
+  gap: 5rem;
+
   position: relative;
+}
+
+.hero-content {
+  flex: 1;
+}
+
+.hero-logo {
+  flex-shrink: 0;
+}
+
+.hero-logo img {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .main-title {
@@ -69,6 +92,7 @@
 .scroll-indicator {
   position: absolute;
   bottom: 2rem;
+  left: 8rem; /* Match hero padding */
   display: flex;
   flex-direction: column;
   align-items: left;
@@ -100,5 +124,34 @@
   60% {
     transform: translateY(-5px);
   }
+}
+
+@media (max-width: 868px) {
+  .hero {
+    flex-direction: column;
+    padding: 8rem 2rem 0; /* Add top padding to move content down */
+    align-items: flex-start; /* Align items to the left */
+    justify-content: flex-start; /* Align to the top of the container */
+    gap: 2rem;
+  }
+
+  .hero-content {
+    order: 2; /* Text comes after logo */
+    text-align: left;
+  }
+
+  .hero-logo {
+    order: 1; /* Logo comes first */
+  }
+
+  .hero-logo img {
+    width: 150px;
+    height: 150px;
+  }
+
+  .scroll-indicator {
+    left: 2rem;
+  }
+
 }
 </style>

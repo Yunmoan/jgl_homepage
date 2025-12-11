@@ -1,15 +1,19 @@
 <template>
   <div class="contact-view page-wrapper">
     <div class="container">
-      <h2 class="page-title">联系我们 / CONTACT</h2>
+      <h2 class="page-title">加入我们 / JOIN US！</h2>
+      <p style="text-align: center;padding-bottom: 1.5rem;">无论你是东方Project的老玩家，还是刚刚了解幻想乡的新人， 我们都欢迎你的加入！一起探索这个奇妙的弹幕世界吧！
+      </p>
       <div class="content">
-        <p>我们非常欢迎新的伙伴加入，或是与其他组织进行交流合作。你可以通过以下方式联系到我们：</p>
-        <ul>
+        <img width="256" height="256" style="text-align: center;" src="/qq_qrcode.png" />
+        <br /><span>扫描二维码加入河北高校东方联合会</span>
+
+        <!-- <ul>
           <li><strong>社团交流QQ群:</strong> <a href="#">123456789</a> (点击加群)</li>
           <li><strong>电子邮件:</strong> <a href="mailto:contact@hebei-touhou.com">contact@hebei-touhou.com</a></li>
-          <li><strong>Bilibili官方账号:</strong> <a href="#" target="_blank" rel="noopener">@河北东方高校联合</a></li>
+          <li><strong>Bilibili官方账号:</strong> <a href="#" target="_blank" rel="noopener">@河北东方高校联合会</a></li>
         </ul>
-        <p>我们期待你的声音！</p>
+        <p>我们期待你的声音！</p> -->
       </div>
     </div>
   </div>
@@ -19,26 +23,28 @@
 
 <style scoped>
 .page-wrapper {
-  padding: 120px 0 4rem;
+  padding: 120px 0 5rem;
   /* 80px for header + 40px top padding */
+  background: linear-gradient(#235b72, #353535)
 }
 
 .page-title {
   font-size: 2.5rem;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 3rem;
-  text-align: left;
-  border-bottom: 2px solid #5698c3;
-  padding-bottom: 1rem;
+  margin-bottom: .1rem;
+  text-align: center;
+  /* border-bottom: 2px solid #5698c3; */
+  padding-bottom: .2rem;
 }
 
 .content {
-  background-color: rgba(26, 75, 139, 0.2);
+  background-color: rgba(58, 103, 239, 0.411);
   padding: 2.5rem;
   border-radius: 8px;
+  text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  max-width: 800px;
+  max-width: 300px;
   margin: 0 auto;
 }
 

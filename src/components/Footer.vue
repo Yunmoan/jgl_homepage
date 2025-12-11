@@ -1,32 +1,98 @@
 <template>
   <footer class="site-footer">
     <div class="container">
-      <p>&copy; 2025 河北东方高校联合. All Rights Reserved.</p>
-      <p>Designed with ♥<a href="//github.com/Yunmoan" target="_blank">云默安</a> | Developed by <a href="//www.zyghit.cn"
-          target="_blank">ZGIT Network</a></p>
+      <div class="footer-main-content">
+        <div class="footer-column">
+          <h4>河北高校东方联合会</h4>
+          <p class="description">这里是冀高联，连接河北省各高校东方Project爱好者, 共同交流创作与游戏乐趣</p>
+          <div class="social-icons">
+            <a href="//github.com/Yunmoan/jgl_homepage" target="_blank" title="GitHub">
+              <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                viewBox="0 0 1024 1024">
+                <path
+                  d="M511.6 76.3C264.3 76.2 64 276.4 64 523.5C64 718.9 189.3 885 363.8 946c23.5 5.9 19.9-10.8 19.9-22.2v-77.5c-135.7 15.9-141.2-73.9-150.3-88.9C215 726 171.5 718 184.5 703c30.9-15.9 62.4 4 98.9 57.9c26.4 39.1 77.9 32.5 104 26c5.7-23.5 17.9-44.5 34.7-60.8c-140.6-25.2-199.2-111-199.2-213c0-49.5 16.3-95 48.3-131.7c-20.4-60.5 1.9-112.3 4.9-120c58.1-5.2 118.5 41.6 123.2 45.3c33-8.9 70.7-13.6 112.9-13.6c42.4 0 80.2 4.9 113.5 13.9c11.3-8.6 67.3-48.8 121.3-43.9c2.9 7.7 24.7 58.3 5.5 118c32.4 36.8 48.9 82.7 48.9 132.3c0 102.2-59 188.1-200 212.9a127.5 127.5 0 0 1 38.1 91v112.5c.8 9 0 17.9 15 17.9c177.1-59.7 304.6-227 304.6-424.1c0-247.2-200.4-447.3-447.5-447.3z"
+                  fill="currentColor"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+        <!-- <div class="footer-column">
+          <h4>快速链接</h4>
+          <ul>
+            <li><a href="#">关于我们</a></li>
+            <li><a href="#">活动展示</a></li>
+            <li><a href="#">活动方案库</a></li>
+            <li><a href="#">成员社团</a></li>
+            <li><a href="#">加入我们</a></li>
+          </ul>
+        </div> -->
+        <div class="footer-column">
+          <h4>联系我们</h4>
+          <p>QQ群: 629349964</p>
+          <p>QQ: 3612353775</p>
+          <p>B站: 冀高联_Official</p>
+        </div>
+      </div>
+      <hr class="footer-divider">
+      <div class="footer-bottom">
+        <p>&copy; 2025 河北东方高校联合会. All Rights Reserved.</p>
+        <p>Designed with ♥<a href="//github.com/Yunmoan" target="_blank">云默安</a> | Developed by <a
+            href="//www.zyghit.cn" target="_blank">ZGIT Network</a></p>
+        <div class="build-info">
+          <svg class="git-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16"
+            fill="currentColor">
+            <path
+              d="M15.698 7.287L8.712.302a.5.5 0 0 0-.707 0L1.302 7.007a.5.5 0 0 0 0 .707l7.005 7.005a.5.5 0 0 0 .707 0l6.684-6.684a.5.5 0 0 0 0-.707zM8 1.01L14.99 8 8 14.99 1.01 8 8 1.01zM4.5 8a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1h-3a.5.5 0 0 0-.5.5zm1 2.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1h-3a.5.5 0 0 0-.5.5z" />
+            <circle cx="4" cy="8" r="1" />
+            <path
+              d="M9.5 8a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 .5-.5zm-1 2.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 .5-.5z" />
+            <circle cx="12" cy="8" r="1" />
+          </svg>
+          <span>Build {{ gitHash }} - {{ formattedDate }}</span>
+        </div>
+      </div>
     </div>
   </footer>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const gitHash = __GIT_HASH__;
+const gitDate = __GIT_DATE__;
+
+const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false
+});
+</script>
 
 <style scoped>
 .site-footer {
-  background-color: #333;
-  color: #fff;
-  padding: 2rem 0;
+  background-color: #161b22;
+  /* A deep, neutral dark color */
+  color: #c9d1d9;
+  padding: 3rem 0;
   text-align: left;
+  /* border-top: 3px solid transparent; */
+  /* border-image: linear-gradient(to right, #e7a33e, #3383ff, #8a33ff) 1; */
+  font-size: 14px;
+  position: relative;
 }
 
-a {
-  color: #df8585;
-  text-decoration: none;
-}
-
-a:hover {
-  color: #fff;
-
-}
+/*.site-footer::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(to right, #3383ff, #8a33ff, #e833ff);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}*/
 
 .container {
   max-width: 1400px;
@@ -34,7 +100,137 @@ a:hover {
   padding: 0 2rem;
 }
 
-.site-footer p {
+.footer-main-content {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer-column {
+  flex: 1;
+  min-width: 220px;
+}
+
+.footer-column h4 {
+  color: #fff;
+  margin-bottom: 1rem;
+  /* Reduced margin */
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  /* Added letter spacing */
+}
+
+.footer-column p,
+.footer-column ul li {
+  margin-bottom: 0.5rem;
+  /* Reduced margin */
+  color: #8b949e;
+}
+
+.footer-column .description {
+  line-height: 1.6;
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+}
+
+.social-icons {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.social-icons a {
+  color: #8b949e;
+  transition: color 0.3s ease, transform 0.3s ease;
+  display: inline-block;
+  /* For transform to work */
+}
+
+.social-icons a:hover {
+  color: #58a6ff;
+  transform: translateY(-2px);
+}
+
+.social-icons svg {
+  width: 24px;
+  height: 24px;
+}
+
+.footer-divider {
+  border: none;
+  height: 1px;
+  background-color: #30363d;
+  /* Softened color */
+  margin: 2rem 0;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 14px;
+  color: #8b949e;
+}
+
+.footer-bottom p {
   margin: 0.5rem 0;
+}
+
+.build-info {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 12px;
+  color: #8b949e;
+  text-align: right;
+  flex-grow: 1;
+}
+
+.git-icon {
+  margin-right: 0.5em;
+}
+
+a {
+  color: #58a6ff;
+  /* 更新链接颜色以匹配现代风格 */
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .footer-bottom {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .footer-main-content {
+    flex-direction: column;
+    align-items: left;
+    text-align: left;
+  }
+
+  .footer-column {
+    width: 100%;
+    max-width: 350px;
+  }
+
+  .build-info {
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
 }
 </style>

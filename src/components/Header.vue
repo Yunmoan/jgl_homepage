@@ -5,54 +5,42 @@
         <a href="#home">
           <img src="/logo2.png" alt="河北东方高校联合 Logo" class="logo-img">
           <div class="logo-text-wrapper">
-            <span class="logo-text">河北东方高校联合 <span style="font-size: 15px;font-family: 'Noto Sans SC', sans-serif;">:
-                永夜狂想曲</span></span>
+            <span class="logo-text">河北东方高校联合会</span>
             <span class="logo-subtitle">HEBEI COLLEGES AND UNIVERSITIES TOUHOU CLUB UNION</span>
           </div>
         </a>
       </div>
       <nav class="main-nav">
-        <a href="#home" :class="{ active: activeSection === '#home' }">
-          <div class="nav-content"><span>首页</span><span class="en">HOME</span></div>
-        </a>
-        <a href="#about" :class="{ active: activeSection === '#about' }">
-          <div class="nav-content"><span>关于我们</span><span class="en">ABOUT</span></div>
-        </a>
-        <a href="#works" :class="{ active: activeSection === '#works' }">
-          <div class="nav-content"><span>社团作品</span><span class="en">WORKS</span></div>
-        </a>
-        <a href="#contact" :class="{ active: activeSection === '#contact' }">
-          <div class="nav-content"><span>联系我们</span><span class="en">CONTACT</span></div>
+        <a v-for="item in navItems" :key="item.href" :href="item.href" :class="{ active: activeSection === item.href }">
+          <div class="nav-content"><span>{{ item.text }}</span><span class="en">{{ item.en }}</span></div>
         </a>
       </nav>
-      <button class="menu-toggle" @click="toggleMenu" aria-label="Toggle menu" :class="{ 'is-open': isMenuOpen }">
+      <button class="menu-toggle" @click="toggleMenu" aria-label="Toggle menu" :class="{ 'is-open': isMenuOpen }"
+        aria-controls="mobile-nav-container" :aria-expanded="isMenuOpen">
         <span class="bar"></span>
         <span class="bar"></span>
         <span class="bar"></span>
       </button>
     </div>
-    <nav class="mobile-nav" :class="{ 'is-open': isMenuOpen }">
+
+    <nav id="mobile-nav-container" class="mobile-nav" :class="{ 'is-open': isMenuOpen }">
       <div class="mobile-nav-header">
         <div class="logo">
           <a href="#home" @click="closeMenu">
-            <img src="/logo2.png" alt="河北东方高校联合 Logo" class="logo-img">
+
             <div class="logo-text-wrapper">
-              <span class="logo-text">河北东方高校联合</span>
+              <span class="logo-text">河北东方高校联合会</span>
               <span class="logo-subtitle">HEBEI COLLEGES AND UNIVERSITIES TOUHOU CLUB UNION</span>
             </div>
           </a>
         </div>
-        <button class="close-menu" @click="closeMenu" aria-label="Close menu">&times;</button>
+        <!-- <button class="close-menu" @click="closeMenu" aria-label="Close menu">&times;</button> -->
       </div>
       <div class="mobile-nav-links">
-        <a href="#home" @click="closeMenu" :class="{ active: activeSection === '#home' }"><span>首页</span><span
-            class="en">HOME</span></a>
-        <a href="#about" @click="closeMenu" :class="{ active: activeSection === '#about' }"><span>关于我们</span><span
-            class="en">ABOUT</span></a>
-        <a href="#works" @click="closeMenu" :class="{ active: activeSection === '#works' }"><span>社团作品</span><span
-            class="en">WORKS</span></a>
-        <a href="#contact" @click="closeMenu" :class="{ active: activeSection === '#contact' }"><span>联系我们</span><span
-            class="en">CONTACT</span></a>
+        <a v-for="item in navItems" :key="item.href" :href="item.href" @click="closeMenu"
+          :class="{ active: activeSection === item.href }">
+          <span>{{ item.text }}</span><span class="en">{{ item.en }}</span>
+        </a>
       </div>
     </nav>
   </header>
@@ -60,6 +48,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+
+const navItems = ref([
+  { href: '#home', text: '首页', en: 'HOME' },
+  { href: '#about', text: '关于', en: 'ABOUT' },
+  { href: '#works', text: '制品', en: 'WORKS' },
+  { href: '#history', text: '高联足迹', en: 'HISTORY' },
+  { href: '#news', text: '新闻', en: 'NEWS' },
+  { href: '#members', text: '成员社团', en: 'MEMBERS' },
+  { href: '#contact', text: '联系我们', en: 'CONTACT' },
+]);
 
 const isMenuOpen = ref(false);
 const activeSection = ref('#home'); // Default to home
@@ -173,9 +171,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 2rem;
+  padding: 8px 1.2rem;
   background-color: rgba(255, 255, 255, 0.1);
-  transform: skewX(-25deg);
+  /* transform: skewX(-25deg); */
   transition: background-color 0.3s;
   margin-left: -0px;
   backdrop-filter: blur(10px);
@@ -190,7 +188,7 @@ onMounted(() => {
 }
 
 .nav-content {
-  transform: skewX(25deg);
+  /* transform: skewX(25deg); */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -222,7 +220,8 @@ onMounted(() => {
   border: none;
   cursor: pointer;
   padding: 0;
-  z-index: 1001;
+  z-index: 1002;
+  /* Ensure toggle is above open menu */
 }
 
 .menu-toggle .bar {
@@ -248,25 +247,27 @@ onMounted(() => {
 }
 
 .mobile-nav {
-  display: none;
+  display: flex;
+  flex-direction: column;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  transform: translateX(-100%);
-  /* Start off-screen to the left */
-  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  padding: 1rem;
+  padding-left: 1rem;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), visibility 0.4s;
   z-index: 1000;
-  padding: 2rem;
-  flex-direction: column;
+  visibility: hidden;
 }
 
 .mobile-nav.is-open {
   transform: translateX(0);
+  visibility: visible;
 }
 
 .mobile-nav-header {
@@ -285,6 +286,7 @@ onMounted(() => {
   display: block;
   /* Ensure subtitle is visible */
   font-size: 0.5rem;
+
 }
 
 .close-menu {
@@ -298,10 +300,21 @@ onMounted(() => {
 }
 
 .mobile-nav-links {
-  margin-top: 4rem;
+  margin-top: 2rem;
   display: flex;
   flex-direction: column;
   width: 100%;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-radius: 8px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transform: translateX(50%);
+  transition: transform 0.3s ease;
+  transition-delay: 0s;
+  /* Default delay when closing */
 }
 
 .mobile-nav a {
@@ -339,7 +352,7 @@ onMounted(() => {
 .mobile-nav a.active::before {
   content: '';
   position: absolute;
-  left: -2rem;
+  left: -1rem;
   top: 0;
   bottom: 0;
   width: 4px;
@@ -348,7 +361,14 @@ onMounted(() => {
   border-radius: 2px;
 }
 
-@media (max-width: 768px) {
+.mobile-nav.is-open .mobile-nav-links {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0.1s;
+  /* Delay to start after menu slides in */
+}
+
+@media (max-width: 1024px) {
   .main-nav {
     display: none;
   }
@@ -357,9 +377,7 @@ onMounted(() => {
     display: block;
   }
 
-  .mobile-nav {
-    display: flex;
-  }
+
 
   .logo-subtitle {
     display: none;

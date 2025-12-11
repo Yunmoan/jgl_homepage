@@ -1,9 +1,17 @@
-{
-    "time":"2025-12-10",
-    "data": [{
-      "title":"",
-      "description":"",
-      "image":"",
-      "link":""
-    }]
-}
+[
+  {
+    "id": 1,
+    "title": "作品标题 1",
+    "description": "这里是作品的简短描述。",
+    "imageUrl": "/img/work1.jpg",
+    "link": "#"
+  },
+  {
+    "id": 2,
+    "title": "作品标题 2",
+    "description": "这里是作品的简短描述。",
+    "imageUrl": "/img/work2.jpg",
+    "link": "#"
+  }
+]
+
