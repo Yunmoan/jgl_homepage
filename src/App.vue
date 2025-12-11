@@ -20,7 +20,7 @@
     <section id="members" class="fade-in-section">
       <MembersView />
     </section>
-    <section id="contact" class="fade-in-section">
+    <section id="contact">
       <ContactView />
     </section>
 

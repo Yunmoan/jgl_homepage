@@ -145,8 +145,8 @@ onMounted(async () => {
   }
 
   .member-logo {
-    width: 60px;
-    height: 60px;
+    width: 100px;
+    height: 100px;
     margin-bottom: 0.8rem;
   }
 
@@ -161,8 +161,8 @@ onMounted(async () => {
   }
 
   .member-logo {
-    width: 50px;
-    height: 50px;
+    width: 70px;
+    height: 70px;
   }
 }
 </style>

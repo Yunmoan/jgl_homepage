@@ -7,11 +7,11 @@
     <div class="container">
       <h2 class="page-title">高联足迹 / HISTORY</h2>
       <swiper v-if="swiperReady" :modules="[Navigation, Autoplay]" :slides-per-view="1" :space-between="30"
-        :navigation="{ nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }" class="history-swiper"
-        :loop="true" :autoplay="{
+        :navigation="isMultiPage ? { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' } : false"
+        class="history-swiper" :loop="isMultiPage" :autoplay="isMultiPage ? {
           delay: 10000,
           disableOnInteraction: false,
-        }" @slideChange="onSlideChange">
+        } : false" @slideChange="onSlideChange">
         <swiper-slide v-for="(event, index) in history" :key="index">
           <div class="slide-content">
             <h3>{{ event.title }}</h3>
@@ -22,7 +22,7 @@
         </swiper-slide>
 
         <!-- Navigation buttons moved outside the slides loop for correct positioning -->
-        <div class="swiper-navigation">
+        <div v-if="isMultiPage" class="swiper-navigation">
           <div class="swiper-button-prev"></div>
           <div class="swiper-button-next"></div>
         </div>
@@ -59,6 +59,7 @@ interface HistoryEvent {
 }
 
 const history = ref<HistoryEvent[]>([]);
+const isMultiPage = ref(false);
 const swiperReady = ref(false);
 const bgLayer1 = ref({ url: '', opacity: 1, animationClass: '' });
 const bgLayer2 = ref({ url: '', opacity: 0, animationClass: '' });
@@ -98,8 +99,10 @@ onMounted(async () => {
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
+    isMultiPage.value = data.length > 1;
+
     // If there are too few slides for loop mode, duplicate them.
-    if (data.length > 0 && data.length < 5) {
+    if (isMultiPage.value && data.length < 5) {
       history.value = [...data, ...data];
     } else {
       history.value = data;

@@ -6,6 +6,15 @@
           <h4>河北高校东方联合会</h4>
           <p class="description">这里是冀高联，连接河北省各高校东方Project爱好者, 共同交流创作与游戏乐趣</p>
           <div class="social-icons">
+            <a href="https://space.bilibili.com/3546972533295132" target="_blank">
+              <svg t="1765471753977" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                xmlns="http://www.w3.org/2000/svg" p-id="1642" width="200" height="200">
+                <path
+                  d="M777.514667 131.669333a53.333333 53.333333 0 0 1 0 75.434667L728.746667 255.829333h49.92A160 160 0 0 1 938.666667 415.872v320a160 160 0 0 1-160 160H245.333333A160 160 0 0 1 85.333333 735.872v-320a160 160 0 0 1 160-160h49.749334L246.4 207.146667a53.333333 53.333333 0 0 1 75.392-75.434667l113.152 113.152c3.370667 3.370667 6.186667 7.04 8.448 10.965333h137.088c2.261333-3.925333 5.12-7.68 8.490667-11.008l113.109333-113.152a53.333333 53.333333 0 0 1 75.434667 0z m1.152 231.253334H245.333333a53.333333 53.333333 0 0 0-53.205333 49.365333l-0.128 4.010667v320c0 28.117333 21.76 51.114667 49.365333 53.162666l3.968 0.170667h533.333334a53.333333 53.333333 0 0 0 53.205333-49.365333l0.128-3.968v-320c0-29.44-23.893333-53.333333-53.333333-53.333334z m-426.666667 106.666666c29.44 0 53.333333 23.893333 53.333333 53.333334v53.333333a53.333333 53.333333 0 1 1-106.666666 0v-53.333333c0-29.44 23.893333-53.333333 53.333333-53.333334z m320 0c29.44 0 53.333333 23.893333 53.333333 53.333334v53.333333a53.333333 53.333333 0 1 1-106.666666 0v-53.333333c0-29.44 23.893333-53.333333 53.333333-53.333334z"
+                  p-id="1643" fill="currentColor"></path>
+              </svg>
+
+            </a>
             <a href="//github.com/Yunmoan/jgl_homepage" target="_blank" title="GitHub">
               <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                 viewBox="0 0 1024 1024">
@@ -28,26 +37,25 @@
         </div> -->
         <div class="footer-column">
           <h4>联系我们</h4>
-          <p>QQ群: 629349964</p>
           <p>QQ: 3612353775</p>
           <p>B站: 冀高联_Official</p>
         </div>
       </div>
       <hr class="footer-divider">
       <div class="footer-bottom">
-        <p>&copy; 2025 河北东方高校联合会. All Rights Reserved.</p>
-        <p>Designed with ♥<a href="//github.com/Yunmoan" target="_blank">云默安</a> | Developed by <a
-            href="//www.zyghit.cn" target="_blank">ZGIT Network</a></p>
+        <p>&copy; 2025 河北东方高校联合会. All Rights Reserved.
+          <br />
+          Designed with ♥<a href="//github.com/Yunmoan" target="_blank">云默安</a> | Developed by <a href="//www.zyghit.cn"
+            target="_blank">ZGIT Network</a>
+        </p>
         <div class="build-info">
-          <svg class="git-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16"
-            fill="currentColor">
+          <svg class="git-icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512">
             <path
-              d="M15.698 7.287L8.712.302a.5.5 0 0 0-.707 0L1.302 7.007a.5.5 0 0 0 0 .707l7.005 7.005a.5.5 0 0 0 .707 0l6.684-6.684a.5.5 0 0 0 0-.707zM8 1.01L14.99 8 8 14.99 1.01 8 8 1.01zM4.5 8a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1h-3a.5.5 0 0 0-.5.5zm1 2.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1h-3a.5.5 0 0 0-.5.5z" />
-            <circle cx="4" cy="8" r="1" />
-            <path
-              d="M9.5 8a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 .5-.5zm-1 2.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 .5-.5z" />
-            <circle cx="12" cy="8" r="1" />
+              d="M416 160a64 64 0 1 0-96.27 55.24c-2.29 29.08-20.08 37-75 48.42c-17.76 3.68-35.93 7.45-52.71 13.93v-126.2a64 64 0 1 0-64 0v209.22a64 64 0 1 0 64.42.24c2.39-18 16-24.33 65.26-34.52c27.43-5.67 55.78-11.54 79.78-26.95c29-18.58 44.53-46.78 46.36-83.89A64 64 0 0 0 416 160zM160 64a32 32 0 1 1-32 32a32 32 0 0 1 32-32zm0 384a32 32 0 1 1 32-32a32 32 0 0 1-32 32zm192-256a32 32 0 1 1 32-32a32 32 0 0 1-32 32z"
+              fill="currentColor"></path>
           </svg>
+
           <span>Build {{ gitHash }} - {{ formattedDate }}</span>
         </div>
       </div>
@@ -154,7 +162,6 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
 
 .social-icons a:hover {
   color: #58a6ff;
-  transform: translateY(-2px);
 }
 
 .social-icons svg {
@@ -174,7 +181,7 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 1rem;
   font-size: 14px;
   color: #8b949e;
