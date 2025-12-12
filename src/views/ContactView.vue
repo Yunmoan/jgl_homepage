@@ -5,7 +5,7 @@
       <p style="text-align: center;padding-bottom: 1.5rem;">无论你是东方Project的老玩家，还是刚刚了解幻想乡的新人， 我们都欢迎你的加入！一起探索这个奇妙的弹幕世界吧！
       </p>
       <div class="content">
-        <img width="256" height="256" style="text-align: center;" src="/qq_qrcode.png" />
+        <img width="256" height="256" style="text-align: center;" src="/qq_qrcode.webp" />
         <br /><span>扫描二维码加入河北高校东方联合会</span>
 
         <!-- <ul>

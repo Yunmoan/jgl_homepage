@@ -98,7 +98,7 @@ ul {
   padding: 0 8rem;
   gap: 5rem;
   position: relative;
-  background: linear-gradient(rgba(28, 25, 70, 0.3), rgba(125, 29, 74, 0.269)), url('/134678540_p1.jpg') no-repeat center bottom/cover;
+  background: linear-gradient(rgba(28, 25, 70, 0.3), rgba(125, 29, 74, 0.269)), url('/134678540_p1.webp') no-repeat center bottom/cover;
   background-attachment: fixed;
 }
 

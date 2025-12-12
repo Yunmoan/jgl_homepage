@@ -3,7 +3,7 @@
     <div class="container">
       <div class="logo">
         <router-link to="/">
-          <img src="/logo2.png" alt="河北东方高校联合 Logo" class="logo-img">
+          <img src="/logo2.webp" alt="河北东方高校联合 Logo" class="logo-img">
           <div class="logo-text-wrapper">
             <span class="logo-text">河北东方高校联合会</span>
             <span class="logo-subtitle">HEBEI COLLEGES AND UNIVERSITIES TOUHOU CLUB UNION</span>
@@ -56,7 +56,7 @@ const navItems = ref([
   { to: '/#history', text: '高联足迹', en: 'HISTORY' },
   { to: '/#news', text: '新闻', en: 'NEWS' },
   { to: '/#members', text: '成员社团', en: 'MEMBERS' },
-  { to: '/#contact', text: '联系我们', en: 'CONTACT' },
+  { to: '/#contact', text: '名人堂', en: 'CONTACT' },
 ]);
 
 const isMenuOpen = ref(false);
