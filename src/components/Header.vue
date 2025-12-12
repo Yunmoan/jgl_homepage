@@ -56,7 +56,7 @@ const navItems = ref([
   { to: '/#history', text: '高联足迹', en: 'HISTORY' },
   { to: '/#news', text: '新闻', en: 'NEWS' },
   { to: '/#members', text: '成员社团', en: 'MEMBERS' },
-  { to: '/#contact', text: '名人堂', en: 'CONTACT' },
+  { to: '/fames', text: '名人堂', en: 'FAMES' },
 ]);
 
 const isMenuOpen = ref(false);
@@ -107,6 +107,8 @@ const handleRouteChange = (to: any) => {
     } else {
       activeSection.value = '/#home';
     }
+  } else if (to.path === '/fames') {
+    activeSection.value = '/#fames';
   } else {
     if (observer) {
       observer.disconnect();

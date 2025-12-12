@@ -227,7 +227,7 @@ onMounted(async () => {
 .history-swiper {
   width: 100%;
   height: 60vh;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
   background: transparent;

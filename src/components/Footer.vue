@@ -3,7 +3,6 @@
     <div class="container">
       <div class="footer-main-content">
         <div class="footer-column">
-          <router-link to="/management">历届高联</router-link>
           <h4>河北高校东方联合会</h4>
           <p class="description">这里是冀高联，连接河北省各高校东方Project爱好者, 共同交流创作与游戏乐趣</p>
           <div class="social-icons">
@@ -35,20 +34,19 @@
         <div class="footer-column">
           <h4>快速链接</h4>
           <ul>
-            <li><a href="#">关于我们</a></li>
-            <li><a href="#">活动展示</a></li>
-            <li><a href="#">活动方案库</a></li>
-            <li><a href="#">成员社团</a></li>
-            <li><a href="#">加入我们</a></li>
+            <li><router-link to="/fames">名人堂</router-link></li>
+            <li><router-link to="/fames#history">历届高联管理层</router-link></li>
           </ul>
         </div>
       </div>
       <div class="footer-column">
-        <span>友情链接：</span>
-        <a href="#">关于我们</a>
+        <span class="footer-column-title">友情链接: </span>
+
+        <span style="margin-left: 10px;font-size:13.7px;" v-for="link in friendLinks" :key="link.url">
+          <a :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
+        </span>
+
       </div>
-
-
       <hr class="footer-divider">
       <div class="footer-bottom">
         <p>&copy; 2025 河北东方高校联合会. All Rights Reserved.
@@ -72,6 +70,27 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+
+interface FriendLink {
+  title: string;
+  url: string;
+}
+
+const friendLinks = ref<FriendLink[]>([]);
+
+onMounted(async () => {
+  try {
+    const response = await fetch('/data/friend_link.json');
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    friendLinks.value = await response.json();
+  } catch (error) {
+    console.error('Failed to fetch friend links:', error);
+  }
+});
+
 const gitHash = __GIT_HASH__;
 const gitDate = __GIT_DATE__;
 
@@ -130,6 +149,11 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
   flex: 1;
   min-width: 220px;
 }
+
+.footer-main-content .footer-column:first-child {
+  flex: 2;
+}
+
 
 .footer-column a {
   color: #8b949e;

@@ -36,7 +36,7 @@ let page = 1;
 
 const onImageError = (event: Event) => {
   const target = event.target as HTMLImageElement;
-  target.src = '/member_logos_circular/placeholder.svg'; // Local placeholder image
+  target.src = '/placeholder.svg'; // Local placeholder image
 };
 
 const loadMoreMembers = () => {
@@ -127,7 +127,7 @@ onUnmounted(() => {
 .member-card {
   background-color: rgba(30, 41, 59, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 1.1rem;
   display: flex;
   flex-direction: column;
@@ -202,7 +202,7 @@ onUnmounted(() => {
 
   .member-card {
     padding: 1rem;
-    border-radius: 12px;
+    border-radius: 8px;
     min-height: 160px;
     /* Adjust for mobile */
   }

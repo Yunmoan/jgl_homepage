@@ -3,24 +3,92 @@
     "id": 1,
     "title": "第一届高联理事会",
     "trem": "2025-2026",
+    "description": "首届冀高联理事会，以下不分排名先后，随便排的（）",
     "members": [
       {
-        "name": "张三",
+        "name": "甘之如饴",
         "position": "主席",
-        "image": "/images/fames_member/zhangsan.jpg",
-        "description": "张三是一位资深的东方同好会成员，他在东方同好会中担任主席职务，负责组织和协调东方同好会的各项活动。"
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=2372689866&s=640"
       },
       {
-        "name": "李四",
-        "position": "副主席",
-        "image": "/images/fames_member/lisi.jpg",
-        "description": "李四是一位资深的东方同好会成员，他在东方同好会中担任副主席职务，负责协助主席组织和协调东方同好会的各项活动。"
+        "name": "种子批发部",
+        "position": "理事",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=1651893403&s=640"
       },
       {
-        "name": "王五",
-        "position": "秘书长",
-        "image": "/images/fames_member/wangwu.jpg",
-        "description": "王五是一位资深的东方同好会成员，他在东方同好会中担任秘书长职务，负责协助主席组织和协调东方同好会的各项活动。"
+        "name": "白椿華",
+        "position": "理事",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=2873196711&s=640"
+      },
+      {
+        "name": "上善",
+        "position": "宣传组总理事、财会成员、出摊组成员、主群管理",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=2121481835&s=640"
+      },
+      {
+        "name": "云默安",
+        "position": "监事、宣传组成员",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=1454273424&s=640"
+      },
+      {
+        "name": "小川asaka",
+        "position": "监事",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=3386867992&s=640"
+      },
+      {
+        "name": "jo秀",
+        "position": "监事、主群管理",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=2362404190&s=640"
+      },
+      {
+        "name": "从不咕咕的鸽纸",
+        "position": "财会总理事、宣传组成员、主群管理",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=3349525227&s=640"
+      },
+      {
+        "name": "blank",
+        "position": "出摊组总理事、宣传组成员、主群管理",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=3539233147&s=640"
+      },
+      {
+        "name": "夏影",
+        "position": "财会成员",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=1478352874&s=640"
+      },
+      {
+        "name": "32km",
+        "position": "宣传组成员、出摊组成员、主群管理",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=1014521500&s=640"
+      },
+      {
+        "name": "喀秋莎sama",
+        "position": "宣传组成员、主群管理",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=1225504509&s=640"
+      },
+      {
+        "name": "伊吹芒月",
+        "position": "宣传组成员、出摊组成员",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=2879083341&s=640"
+      },
+      {
+        "name": "蓬莱人形",
+        "position": "出摊组成员、主群管理",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=1158884554&s=640"
+      },
+      {
+        "name": "雾雨秋水",
+        "position": "冀高联成员",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=1664946018&s=640"
+      },
+      {
+        "name": "之卡",
+        "position": "冀高联成员",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=669113574&s=640"
+      },
+      {
+        "name": "SyameimairuAyabun",
+        "position": "冀高联成员",
+        "image": "https://q1.qlogo.cn/g?b=qq&nk=3535392883&s=640"
       }
     ]
   }

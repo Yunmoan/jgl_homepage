@@ -29,7 +29,7 @@
         <PictureView />
       </section>
       <section id="news" class="fade-in-section">
-        <NewsSection />
+        <NewsSection @select-article="onArticleSelected" />
       </section>
       <section id="members" class="fade-in-section">
         <MembersView />
@@ -43,12 +43,18 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import AboutView from './AboutView.vue';
-import WorksView from './WorksView.vue';
-import ContactView from './ContactView.vue';
-import PictureView from './PictureView.vue';
-import MembersView from './MembersView.vue';
-import NewsSection from './NewsSection.vue';
+import AboutView from '../views/AboutView.vue';
+import WorksView from '../views/WorksView.vue';
+import ContactView from '../views/ContactView.vue';
+import PictureView from '../views/PictureView.vue';
+import MembersView from '../views/MembersView.vue';
+import NewsSection from '../views/NewsSection.vue';
+
+const emit = defineEmits(['select-article']);
+
+const onArticleSelected = (article: any) => {
+  emit('select-article', article);
+};
 
 onMounted(() => {
   const sections = document.querySelectorAll('.fade-in-section');

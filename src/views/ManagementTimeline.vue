@@ -1,69 +1,109 @@
 <template>
-  <div>
-    <section id="home" class="hero">
-      <div class="hero-content">
-        <h1 class="main-title">名人堂与冀高联</h1>
-        <!-- <p class="description">这里是一个为河北地区东方Project爱好者打造的创作与交流社区。</p> -->
-      </div>
-
-    </section>
-    <div class="management-timeline">
-
-
-
-      <h1>高联管理层时间线</h1>
-      <div v-for="generation in managementData" :key="generation.term" class="timeline-item">
-        <h2>{{ generation.term }}</h2>
-        <ul>
-          <li v-for="member in generation.members" :key="member.name">
-            <strong>{{ member.position }}:</strong> {{ member.name }}
-          </li>
-        </ul>
+  <div class="management-timeline">
+    <h1>高联管理层时间线</h1>
+    <div v-if="loading">正在加载...</div>
+    <div v-else-if="error">{{ error }}</div>
+    <div v-else class="timeline-wrapper">
+      <div v-for="generation in managementData" :key="generation.id" class="timeline-item">
+        <h2>{{ generation.title }} ({{ generation.trem }})</h2>
+        <span>{{ generation.description }}</span>
+        <div class="contributors-list">
+          <div v-for="member in generation.members" :key="member.name" class="contributor-item">
+            <img :src="member.image" :alt="member.name" class="contributor-avatar" @error="handleImageError">
+            <div class="contributor-info">
+              <span class="contributor-name">{{ member.name }}</span>
+              <span class="contributor-position">{{ member.position }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
-const managementData = ref([
-  {
-    term: '第一届 (2023-2024)',
-    members: [
-      { position: '主席', name: '张三' },
-      { position: '副主席', name: '李四' },
-      { position: '秘书长', name: '王五' },
-    ],
-  },
-  {
-    term: '第二届 (2024-2025)',
-    members: [
-      { position: '主席', name: '赵六' },
-      { position: '副主席', name: '孙七' },
-      { position: '秘书长', name: '周八' },
-    ],
-  },
-  // 在这里添加更多届的管理层数据
-]);
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (target) {
+    target.src = '/placeholder.svg';
+  }
+};
+
+interface Member {
+  name: string;
+  position: string;
+  image: string;
+  description: string;
+}
+
+interface Generation {
+  id: number;
+  title: string;
+  description: string;
+  trem: string; // Note: Typo from JSON, should probably be 'term'
+  members: Member[];
+}
+
+const managementData = ref<Generation[]>([]);
+const loading = ref(true);
+const error = ref<string | null>(null);
+
+onMounted(async () => {
+  try {
+    const response = await fetch('/data/admins_history.json');
+    if (!response.ok) {
+      throw new Error('网络响应错误');
+    }
+    const data: Generation[] = await response.json();
+    managementData.value = data.reverse();
+  } catch (e) {
+    error.value = '无法加载管理层数据。';
+    console.error(e);
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <style scoped>
 .management-timeline {
-  padding: 2rem;
-  max-width: 800px;
+  padding: 3rem 8rem;
+  max-width: 1400px;
   margin: 0 auto;
+  color: #d8e3e7;
 }
 
 h1 {
-  text-align: center;
+  text-align: left;
   margin-bottom: 2rem;
+  color: #fff;
+}
+
+.timeline-wrapper {
+  position: relative;
+  padding-left: 1.5rem;
+  /* Space for the timeline line */
+}
+
+.timeline-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  /* Align with the top of the first dot */
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #4a5568;
 }
 
 .timeline-item {
-  border-left: 3px solid #ccc;
-  padding-left: 1.5rem;
-  margin-bottom: 2rem;
+  /* border-left: 3px solid #4a5568; */
+  /* Removed */
+  /* padding-left: 1.5rem; */
+  /* Moved to wrapper */
+  margin-bottom: 2.5rem;
   position: relative;
 }
 
@@ -73,22 +113,59 @@ h1 {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: #ccc;
-  border: 2px solid #fff;
+  background-color: #a0aec0;
+  border: 2px solid #2d3748;
   position: absolute;
-  left: -8px;
+  left: -30px;
+  /* Adjusted position to align with the new line */
   top: 5px;
+  z-index: 1;
+  /* Ensure dot is above the line */
 }
 
 h2 {
   margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #e2e8f0;
 }
 
-ul {
-  list-style-type: none;
-  padding: 0;
+.contributors-list {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.25rem;
 }
 
+.contributor-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.contributor-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.contributor-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.contributor-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.contributor-position {
+  font-size: 0.9rem;
+  color: #a0aec0;
+}
+
+/* Hero Section Styles - Unchanged */
 .hero {
   height: 40vh;
   display: flex;
@@ -111,17 +188,6 @@ ul {
   flex: 1;
 }
 
-.hero-logo {
-  flex-shrink: 0;
-}
-
-.hero-logo img {
-  width: 300px;
-  height: 300px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
 .main-title {
   font-size: 4rem;
   font-weight: 700;
@@ -131,84 +197,13 @@ ul {
   text-shadow: 0 0 20px rgba(130, 81, 0, 0.6);
 }
 
-.subtitle {
-  font-size: 1.2rem;
-  font-weight: 300;
-  color: #a0aec0;
-  margin: 1rem 0 2rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.description {
-  font-size: 1.1rem;
-  color: #cbd5e1;
-  max-width: 100%;
-  margin: 0 auto;
-}
-
-.scroll-indicator {
-  position: absolute;
-  bottom: 2rem;
-  left: 8rem;
-  display: flex;
-  flex-direction: column;
-  align-items: left;
-  color: white;
-  font-size: 0.75rem;
-  letter-spacing: 1px;
-  opacity: 0.7;
-}
-
-.scroll-indicator svg {
-  margin-top: 0.5rem;
-  animation: bounce 2s infinite;
-}
-
-@keyframes bounce {
-
-  0%,
-  20%,
-  50%,
-  80%,
-  100% {
-    transform: translateY(0);
-  }
-
-  40% {
-    transform: translateY(-10px);
-  }
-
-  60% {
-    transform: translateY(-5px);
-  }
-}
-
 @media (max-width: 868px) {
   .hero {
-    flex-direction: column;
     padding: 8rem 2rem 0;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 2rem;
   }
 
-  .hero-content {
-    order: 2;
-    text-align: left;
-  }
-
-  .hero-logo {
-    order: 1;
-  }
-
-  .hero-logo img {
-    width: 150px;
-    height: 150px;
-  }
-
-  .scroll-indicator {
-    left: 2rem;
+  .management-timeline {
+    padding: 2rem 1rem;
   }
 }
 </style>

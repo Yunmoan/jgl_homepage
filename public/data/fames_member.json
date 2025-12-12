@@ -1,10 +1,8 @@
 [
   {
     "id": 1,
-    "name": "张三",
-    "description": "",
-    "image": "/images/admins_history/zhangsan.jpg",
-    "contribution": "我不知道",
-    "time": ""
+    "name": "这现在还没人",
+    "description": "没准下一个就是你呢？",
+    "image": "/what.svg"
   }
 ]

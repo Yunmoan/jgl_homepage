@@ -3,7 +3,7 @@
   <main class="main-content">
     <router-view v-slot="{ Component }">
       <transition name="fade" mode="out-in">
-        <component :is="Component" />
+        <component :is="Component" @select-article="handleSelectArticle" />
       </transition>
     </router-view>
   </main>
@@ -29,7 +29,7 @@ interface Article {
 const isDialogVisible = ref(false);
 const selectedArticle = ref<Article | null>(null);
 
-// This function might be needed in other views, consider moving to a composable or state management
+// This function might be needed in other views, consider moving to a composable or state fames
 const handleSelectArticle = (article: Article) => {
   selectedArticle.value = article;
   isDialogVisible.value = true;
