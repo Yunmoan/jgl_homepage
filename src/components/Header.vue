@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import { useRouter, useRoute, RouteLocationNormalized } from 'vue-router';
+import { useRouter, useRoute, type RouteLocationNormalized } from 'vue-router';
 
 const navItems = ref([
   { to: '/home#home', text: '首页', en: 'HOME' },
