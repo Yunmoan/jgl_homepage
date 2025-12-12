@@ -6,6 +6,10 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/home',
+    },
+    {
+      path: '/home',
       name: 'home',
       component: HomeView,
     },
@@ -20,15 +24,25 @@ const router = createRouter({
       return savedPosition
     }
     if (to.hash) {
-      // Return a promise to delay scrolling
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            el: to.hash,
-            behavior: 'smooth',
+      // Use a more robust method than a fixed timeout
+      const findEl = async (hash: string, x = 0) => {
+        return (
+          document.querySelector(hash) ||
+          new Promise((resolve) => {
+            if (x > 50) {
+              return resolve(null)
+            }
+            setTimeout(() => resolve(findEl(hash, x + 1)), 100)
           })
-        }, 300) // A small delay to allow the page to render
-      })
+        )
+      }
+
+      return (async () => {
+        const el = await findEl(to.hash)
+        if (el) {
+          return { el, behavior: 'smooth' }
+        }
+      })()
     }
     return { top: 0 }
   },

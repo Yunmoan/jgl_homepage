@@ -3,15 +3,14 @@
     <div class="container">
       <h2 class="page-title">成员社团 / MEMBERS</h2><br />
       <span>不分先后，按拼音字母顺序排序</span>
-      <transition-group name="card-stagger" tag="div" class="members-grid" appear>
+      <div class="members-grid">
         <component :is="member.link ? 'a' : 'div'" v-for="(member, index) in displayedMembers" :key="member.id"
           :href="member.link || null" :target="member.link ? '_blank' : null"
-          :rel="member.link ? 'noopener noreferrer' : null" class="member-card"
-          :style="{ '--delay': index * 50 + 'ms' }">
+          :rel="member.link ? 'noopener noreferrer' : null" class="member-card">
           <img :src="member.logo" :alt="member.name" class="member-logo" @error="onImageError" loading="lazy">
           <span class="member-name">{{ member.name }}</span>
         </component>
-      </transition-group>
+      </div>
       <div ref="observerTarget" class="observer-target"></div>
     </div>
   </div>
@@ -57,35 +56,39 @@ const loadMoreMembers = () => {
   }
 };
 
-onMounted(async () => {
-  try {
-    const response = await fetch('/data/members_generated.json');
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
+onMounted(() => {
+  // Use setTimeout to de-prioritize the data fetching and processing
+  // allowing the component to mount and render first.
+  setTimeout(async () => {
+    try {
+      const response = await fetch('/data/members_generated.json');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      allMembers.value = await response.json();
+      loadMoreMembers(); // Load initial batch
+
+      await nextTick();
+
+      if (observerTarget.value) {
+        const observerOptions = {
+          rootMargin: '0px 0px 500px 0px', // Start loading 500px before the target is visible
+          threshold: 0.1
+        };
+
+        observer.value = new IntersectionObserver((entries) => {
+          const [entry] = entries;
+          if (entry?.isIntersecting) {
+            loadMoreMembers();
+          }
+        }, observerOptions);
+        observer.value.observe(observerTarget.value);
+      }
+
+    } catch (error) {
+      console.error('Failed to fetch members data:', error);
     }
-    allMembers.value = await response.json();
-    loadMoreMembers(); // Load initial batch
-
-    await nextTick();
-
-    if (observerTarget.value) {
-      const observerOptions = {
-        rootMargin: '0px 0px 500px 0px', // Start loading 500px before the target is visible
-        threshold: 0.1
-      };
-
-      observer.value = new IntersectionObserver((entries) => {
-        const [entry] = entries;
-        if (entry?.isIntersecting) {
-          loadMoreMembers();
-        }
-      }, observerOptions);
-      observer.value.observe(observerTarget.value);
-    }
-
-  } catch (error) {
-    console.error('Failed to fetch members data:', error);
-  }
+  }, 100); // A small delay is enough
 });
 
 onUnmounted(() => {
@@ -144,17 +147,7 @@ onUnmounted(() => {
   /* Inherit text color */
 }
 
-.card-stagger-enter-active,
-.card-stagger-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  transition-delay: var(--delay, 0ms);
-}
 
-.card-stagger-enter-from,
-.card-stagger-leave-to {
-  opacity: 0;
-  transform: translateY(20px);
-}
 
 .member-card:hover {
   /* background-color: rgba(30, 41, 59, 0.6); */

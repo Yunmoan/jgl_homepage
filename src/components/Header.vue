@@ -2,7 +2,7 @@
   <header class="site-header">
     <div class="container">
       <div class="logo">
-        <router-link to="/">
+        <router-link to="/home">
           <img src="/logo2.webp" alt="河北东方高校联合 Logo" class="logo-img">
           <div class="logo-text-wrapper">
             <span class="logo-text">河北东方高校联合会</span>
@@ -46,21 +46,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { useRouter, useRoute, RouteLocationNormalized } from 'vue-router';
 
 const navItems = ref([
-  { to: '/#home', text: '首页', en: 'HOME' },
-  { to: '/#about', text: '关于', en: 'ABOUT' },
-  { to: '/#works', text: '制品', en: 'WORKS' },
-  { to: '/#history', text: '高联足迹', en: 'HISTORY' },
-  { to: '/#news', text: '新闻', en: 'NEWS' },
-  { to: '/#members', text: '成员社团', en: 'MEMBERS' },
+  { to: '/home#home', text: '首页', en: 'HOME' },
+  { to: '/home#about', text: '关于', en: 'ABOUT' },
+  { to: '/home#works', text: '制品', en: 'WORKS' },
+  { to: '/home#history', text: '高联足迹', en: 'HISTORY' },
+  { to: '/home#news', text: '新闻', en: 'NEWS' },
+  { to: '/home#members', text: '成员社团', en: 'MEMBERS' },
   { to: '/fames', text: '名人堂', en: 'FAMES' },
 ]);
 
 const isMenuOpen = ref(false);
-const activeSection = ref('/#home');
+const isObserverActive = ref(true);
+const activeSection = ref('/home#home');
 const router = useRouter();
 const route = useRoute();
 let observer: IntersectionObserver | null = null;
@@ -81,9 +82,10 @@ const setupObserver = () => {
 
   observer = new IntersectionObserver(
     (entries) => {
+      if (!isObserverActive.value) return;
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          activeSection.value = `/#${entry.target.id}`;
+          activeSection.value = `/home#${entry.target.id}`;
         }
       });
     },
@@ -99,32 +101,38 @@ const setupObserver = () => {
   }, 100);
 };
 
-const handleRouteChange = (to: any) => {
-  if (to.path === '/') {
-    setupObserver();
-    if (to.hash) {
-      activeSection.value = `/${to.hash}`;
-    } else {
-      activeSection.value = '/#home';
+const handleRouteChange = (to: RouteLocationNormalized, from?: RouteLocationNormalized) => {
+  if (to.path === '/home') {
+    // If navigating to a hashed section from another page (e.g., /fames -> /home#history)
+    if (to.hash && from && from.path !== '/home') {
+      isObserverActive.value = false; // Deactivate observer to prevent override
+      activeSection.value = `/home${to.hash}`;
+
+      // Re-enable the observer after the scroll has likely finished and on the next tick
+      nextTick(() => {
+        setTimeout(() => {
+          isObserverActive.value = true;
+        }, 500); // A delay to allow smooth scrolling to finish
+      });
     }
-  } else if (to.path === '/fames') {
-    activeSection.value = '/#fames';
+    setupObserver();
   } else {
+    // If navigating away from the home page
     if (observer) {
       observer.disconnect();
       observer = null;
     }
-    activeSection.value = '';
+    activeSection.value = to.path; // Set active path for other pages
   }
 };
 
 onMounted(() => {
   // Run on initial load
-  handleRouteChange(route);
+  handleRouteChange(route, undefined);
 
   // Register the navigation guard
-  unregisterGuard = router.afterEach((to) => {
-    handleRouteChange(to);
+  unregisterGuard = router.afterEach((to, from) => {
+    handleRouteChange(to, from);
   });
 });
 
