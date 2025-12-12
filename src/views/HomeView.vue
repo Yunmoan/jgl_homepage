@@ -1,6 +1,6 @@
 <template>
-  <div class="home-view">
-    <section class="hero">
+  <div class="home-view-wrapper">
+    <section id="home" class="hero">
       <div class="hero-content">
         <h1 class="main-title">幻想，在此交汇</h1>
         <h2 class="subtitle">河北东方高校联合会 / HEBEI COLLEGES AND UNIVERSITIES TOUHOU CLUB UNION</h2>
@@ -17,34 +17,78 @@
         </svg>
       </div>
     </section>
-    <!-- Other content can go here -->
+
+    <div class="main-sections">
+      <section id="about" class="fade-in-section">
+        <AboutView />
+      </section>
+      <section id="works" class="fade-in-section">
+        <WorksView />
+      </section>
+      <section id="history" class="fade-in-section">
+        <PictureView />
+      </section>
+      <section id="news" class="fade-in-section">
+        <NewsSection />
+      </section>
+      <section id="members" class="fade-in-section">
+        <MembersView />
+      </section>
+      <section id="contact">
+        <ContactView />
+      </section>
+    </div>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import AboutView from './AboutView.vue';
+import WorksView from './WorksView.vue';
+import ContactView from './ContactView.vue';
+import PictureView from './PictureView.vue';
+import MembersView from './MembersView.vue';
+import NewsSection from './NewsSection.vue';
+
+onMounted(() => {
+  const sections = document.querySelectorAll('.fade-in-section');
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target); // Animate only once
+        }
+      });
+    },
+    {
+      threshold: 0.1, // Start animation when 10% of the section is visible
+    }
+  );
+
+  sections.forEach((section) => {
+    observer.observe(section);
+  });
+});
+</script>
 
 <style scoped>
-.home-view {
-  background: linear-gradient(rgba(28, 25, 70, 0.3), rgba(125, 29, 74, 0.269)), url('/134678540_p1.jpg') no-repeat center bottom/cover;
-  background-attachment: fixed;
-}
-
-/* .home-view {
-  padding-top: 80px;
-  Offset for fixed header
-} */
-
 .hero {
   height: 100vh;
-  /* Full viewport height minus header */
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: left;
   padding: 0 8rem;
   gap: 5rem;
-
   position: relative;
+  background: linear-gradient(rgba(28, 25, 70, 0.3), rgba(125, 29, 74, 0.269)), url('/134678540_p1.jpg') no-repeat center bottom/cover;
+  background-attachment: fixed;
+}
+
+.main-sections {
+  background-color: #263d6a;
 }
 
 .hero-content {
@@ -69,14 +113,12 @@
   margin: 0;
   letter-spacing: 2px;
   text-shadow: 0 0 20px rgba(130, 81, 0, 0.6);
-  /* New dark gold for shadow */
 }
 
 .subtitle {
   font-size: 1.2rem;
   font-weight: 300;
   color: #a0aec0;
-  /* A lighter gray */
   margin: 1rem 0 2rem;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -92,7 +134,7 @@
 .scroll-indicator {
   position: absolute;
   bottom: 2rem;
-  left: 8rem; /* Match hero padding */
+  left: 8rem;
   display: flex;
   flex-direction: column;
   align-items: left;
@@ -129,19 +171,19 @@
 @media (max-width: 868px) {
   .hero {
     flex-direction: column;
-    padding: 8rem 2rem 0; /* Add top padding to move content down */
-    align-items: flex-start; /* Align items to the left */
-    justify-content: flex-start; /* Align to the top of the container */
+    padding: 8rem 2rem 0;
+    align-items: flex-start;
+    justify-content: flex-start;
     gap: 2rem;
   }
 
   .hero-content {
-    order: 2; /* Text comes after logo */
+    order: 2;
     text-align: left;
   }
 
   .hero-logo {
-    order: 1; /* Logo comes first */
+    order: 1;
   }
 
   .hero-logo img {
@@ -152,6 +194,5 @@
   .scroll-indicator {
     left: 2rem;
   }
-
 }
 </style>

@@ -1,29 +1,11 @@
 <template>
   <SiteHeader />
   <main class="main-content">
-    <section id="home" class="fade-in-section">
-      <HomeView />
-    </section>
-    <section id="about" class="fade-in-section">
-      <AboutView />
-    </section>
-    <section id="works" class="fade-in-section">
-      <WorksView />
-    </section>
-
-    <section id="history" class="fade-in-section">
-      <PictureView />
-    </section>
-    <section id="news" class="fade-in-section">
-      <NewsSection @select-article="handleSelectArticle" />
-    </section>
-    <section id="members" class="fade-in-section">
-      <MembersView />
-    </section>
-    <section id="contact">
-      <ContactView />
-    </section>
-
+    <router-view v-slot="{ Component }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </router-view>
   </main>
   <SiteFooter />
   <ArticleDialog :show="isDialogVisible" :article="selectedArticle" @close="closeDialog" />
@@ -32,15 +14,8 @@
 <script setup lang="ts">
 import SiteHeader from './components/Header.vue';
 import SiteFooter from './components/Footer.vue';
-import HomeView from './views/HomeView.vue';
-import AboutView from './views/AboutView.vue';
-import WorksView from './views/WorksView.vue';
-import ContactView from './views/ContactView.vue';
-import PictureView from './views/PictureView.vue';
-import MembersView from './views/MembersView.vue';
-import NewsSection from './views/NewsSection.vue';
 import ArticleDialog from './components/ArticleDialog.vue';
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 
 interface Article {
   id: number;
@@ -54,6 +29,7 @@ interface Article {
 const isDialogVisible = ref(false);
 const selectedArticle = ref<Article | null>(null);
 
+// This function might be needed in other views, consider moving to a composable or state management
 const handleSelectArticle = (article: Article) => {
   selectedArticle.value = article;
   isDialogVisible.value = true;
@@ -63,28 +39,6 @@ const closeDialog = () => {
   isDialogVisible.value = false;
   selectedArticle.value = null;
 };
-
-onMounted(() => {
-  const sections = document.querySelectorAll('.fade-in-section');
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target); // Animate only once
-        }
-      });
-    },
-    {
-      threshold: 0.1, // Start animation when 10% of the section is visible
-    }
-  );
-
-  sections.forEach((section) => {
-    observer.observe(section);
-  });
-});
 </script>
 
 <style>
@@ -101,9 +55,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #263d6a;
-  /* background: linear-gradient(rgb(17, 0, 255), rgb(0, 7, 56)); */
   color: #d8e3e7;
-  /* New light grayish blue for text */
 }
 
 #app {
@@ -122,7 +74,16 @@ body {
   padding: 0 1rem;
 }
 
-/* SEO-friendly class to hide content visually but keep it accessible to screen readers */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 .fade-in-section {
   opacity: 0;
   transform: translateY(20px);

@@ -3,7 +3,7 @@
     <div v-if="show" class="dialog-overlay" @click.self="close">
       <div class="dialog-content">
         <header class="dialog-header">
-          <h2 class="dialog-title">{{ article.title }}</h2>
+          <h2 v-if="article" class="dialog-title">{{ article.title }}</h2>
           <button class="close-button" @click="close">&times;</button>
         </header>
         <div class="dialog-body" v-html="articleContent"></div>

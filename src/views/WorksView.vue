@@ -24,8 +24,17 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+
+interface Work {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+  link: string;
+}
+
 // Load data from JSON file
-const works = ref([{}]);
+const works = ref<Work[]>([]);
 
 onMounted(async () => {
   try {

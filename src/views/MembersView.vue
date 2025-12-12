@@ -4,31 +4,57 @@
       <h2 class="page-title">成员社团 / MEMBERS</h2><br />
       <span>不分先后，按拼音字母顺序排序</span>
       <transition-group name="card-stagger" tag="div" class="members-grid" appear>
-        <div class="member-card" v-for="(member, index) in members" :key="member.id"
+        <component :is="member.link ? 'a' : 'div'" v-for="(member, index) in displayedMembers" :key="member.id"
+          :href="member.link || null" :target="member.link ? '_blank' : null"
+          :rel="member.link ? 'noopener noreferrer' : null" class="member-card"
           :style="{ '--delay': index * 50 + 'ms' }">
-          <img :src="member.logo" :alt="member.name" class="member-logo" @error="onImageError">
+          <img :src="member.logo" :alt="member.name" class="member-logo" @error="onImageError" loading="lazy">
           <span class="member-name">{{ member.name }}</span>
-        </div>
+        </component>
       </transition-group>
+      <div ref="observerTarget" class="observer-target"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 
 interface Member {
   id: number;
   name: string;
   logo: string;
+  link?: string; // Add optional link property
 }
 
-const members = ref<Member[]>([]);
+const allMembers = ref<Member[]>([]);
+const displayedMembers = ref<Member[]>([]);
+const observerTarget = ref<HTMLElement | null>(null);
+const observer = ref<IntersectionObserver | null>(null);
+const membersPerPage = 18; // Number of members to load at a time
+let page = 1;
 
 const onImageError = (event: Event) => {
   const target = event.target as HTMLImageElement;
-  // Replace with a placeholder or hide the image
-  target.src = '/member_logos/placeholder.svg'; // Local placeholder image
+  target.src = '/member_logos_circular/placeholder.svg'; // Local placeholder image
+};
+
+const loadMoreMembers = () => {
+  if (allMembers.value.length === 0) return;
+
+  const start = (page - 1) * membersPerPage;
+  const end = start + membersPerPage;
+  const newMembers = allMembers.value.slice(start, end);
+
+  if (newMembers.length > 0) {
+    displayedMembers.value.push(...newMembers);
+    page++;
+  } else {
+    // No more members to load, disconnect observer
+    if (observer.value) {
+      observer.value.disconnect();
+    }
+  }
 };
 
 onMounted(async () => {
@@ -37,9 +63,34 @@ onMounted(async () => {
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
-    members.value = await response.json();
+    allMembers.value = await response.json();
+    loadMoreMembers(); // Load initial batch
+
+    await nextTick();
+
+    if (observerTarget.value) {
+      const observerOptions = {
+        rootMargin: '0px 0px 500px 0px', // Start loading 500px before the target is visible
+        threshold: 0.1
+      };
+
+      observer.value = new IntersectionObserver((entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting) {
+          loadMoreMembers();
+        }
+      }, observerOptions);
+      observer.value.observe(observerTarget.value);
+    }
+
   } catch (error) {
     console.error('Failed to fetch members data:', error);
+  }
+});
+
+onUnmounted(() => {
+  if (observer.value) {
+    observer.value.disconnect();
   }
 });
 </script>
@@ -85,6 +136,12 @@ onMounted(async () => {
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+  min-height: 180px;
+  /* Added to prevent layout shift */
+  text-decoration: none;
+  /* Remove underline from links */
+  color: inherit;
+  /* Inherit text color */
 }
 
 .card-stagger-enter-active,
@@ -100,8 +157,7 @@ onMounted(async () => {
 }
 
 .member-card:hover {
-  /* background-color: rgba(30, 41, 59, 0.6);
-  transform: translateY(-5px); */
+  /* background-color: rgba(30, 41, 59, 0.6); */
   box-shadow: 0 8px 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -111,6 +167,7 @@ onMounted(async () => {
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 1.2rem;
+  background-color: #fff;
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -119,6 +176,10 @@ onMounted(async () => {
   font-size: 1.1rem;
   font-weight: 600;
   text-align: center;
+}
+
+.observer-target {
+  height: 20px;
 }
 
 /* PC Styles */
@@ -142,6 +203,8 @@ onMounted(async () => {
   .member-card {
     padding: 1rem;
     border-radius: 12px;
+    min-height: 160px;
+    /* Adjust for mobile */
   }
 
   .member-logo {
@@ -158,6 +221,11 @@ onMounted(async () => {
 @media (max-width: 480px) {
   .page-title {
     font-size: 2rem;
+  }
+
+  .member-card {
+    min-height: 140px;
+    /* Adjust for smaller mobile */
   }
 
   .member-logo {

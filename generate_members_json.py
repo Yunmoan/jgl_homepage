@@ -34,7 +34,8 @@ def generate_members_json():
             members.append({
                 "id": member_id,
                 "name": name + "东方同好会",
-                "logo": logo_path
+                "logo": logo_path,
+                "link": ""
             })
             
             member_id += 1

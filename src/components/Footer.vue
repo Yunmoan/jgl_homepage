@@ -3,6 +3,7 @@
     <div class="container">
       <div class="footer-main-content">
         <div class="footer-column">
+          <router-link to="/management">历届高联</router-link>
           <h4>河北高校东方联合会</h4>
           <p class="description">这里是冀高联，连接河北省各高校东方Project爱好者, 共同交流创作与游戏乐趣</p>
           <div class="social-icons">
@@ -25,7 +26,13 @@
             </a>
           </div>
         </div>
-        <!-- <div class="footer-column">
+
+        <div class="footer-column">
+          <h4>联系我们</h4>
+          <p>QQ: 3612353775</p>
+          <p>B站: 冀高联_Official</p>
+        </div>
+        <div class="footer-column">
           <h4>快速链接</h4>
           <ul>
             <li><a href="#">关于我们</a></li>
@@ -34,13 +41,14 @@
             <li><a href="#">成员社团</a></li>
             <li><a href="#">加入我们</a></li>
           </ul>
-        </div> -->
-        <div class="footer-column">
-          <h4>联系我们</h4>
-          <p>QQ: 3612353775</p>
-          <p>B站: 冀高联_Official</p>
         </div>
       </div>
+      <div class="footer-column">
+        <span>友情链接：</span>
+        <a href="#">关于我们</a>
+      </div>
+
+
       <hr class="footer-divider">
       <div class="footer-bottom">
         <p>&copy; 2025 河北东方高校联合会. All Rights Reserved.
@@ -91,6 +99,8 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
   position: relative;
 }
 
+
+
 /*.site-footer::before {
   content: '';
   display: block;
@@ -119,6 +129,18 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
 .footer-column {
   flex: 1;
   min-width: 220px;
+}
+
+.footer-column a {
+  color: #8b949e;
+  transition: color 0.3s ease, transform 0.3s ease;
+  display: inline-block;
+}
+
+.footer-column a:hover {
+  color: #58a6ff;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .footer-column h4 {

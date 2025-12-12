@@ -20,9 +20,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 
+interface Article {
+  id: number;
+  title: string;
+  date: string;
+  image: string;
+  summary: string;
+  content: string;
+}
+
 const emit = defineEmits(['select-article']);
 
-const news = ref([{}]);
+const news = ref<Article[]>([]);
 
 onMounted(async () => {
   try {
@@ -49,7 +58,7 @@ const paginatedNews = computed(() => {
   return news.value.slice(startIndex, endIndex);
 });
 
-const selectArticle = (article: any) => {
+const selectArticle = (article: Article) => {
   emit('select-article', article);
 };
 

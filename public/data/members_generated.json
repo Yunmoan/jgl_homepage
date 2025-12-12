@@ -2,286 +2,331 @@
   {
     "id": 1,
     "name": "东北大学秦皇岛分校东方同好会",
-    "logo": "/member_logos_circular/东北大学秦皇岛分校_eba63f.png"
+    "logo": "/member_logos_circular/东北大学秦皇岛分校_eba63f.png",
+    "link": ""
   },
   {
     "id": 2,
     "name": "保定学院东方同好会",
-    "logo": "/member_logos_circular/保定学院.png"
+    "logo": "/member_logos_circular/保定学院.png",
+    "link": ""
   },
   {
     "id": 3,
     "name": "保定市第一中学东方同好会",
-    "logo": "/member_logos_circular/保定市第一中学.png"
+    "logo": "/member_logos_circular/保定市第一中学.png",
+    "link": ""
   },
   {
     "id": 4,
     "name": "保定涿州市中学东方同好会",
-    "logo": "/member_logos_circular/保定涿州市中学.png"
+    "logo": "/member_logos_circular/保定涿州市中学.png",
+    "link": ""
   },
   {
     "id": 5,
     "name": "北京科技大学雄安分校（在建）东方同好会",
-    "logo": "/member_logos_circular/北京科技大学雄安分校（在建）.png"
+    "logo": "/member_logos_circular/北京科技大学雄安分校（在建）.png",
+    "link": ""
   },
   {
     "id": 6,
     "name": "北华航天工业学院东方同好会",
-    "logo": "/member_logos_circular/北华航天工业学院.png"
+    "logo": "/member_logos_circular/北华航天工业学院.png",
+    "link": ""
   },
   {
     "id": 7,
     "name": "华北理工大学东方同好会",
-    "logo": "/member_logos_circular/华北理工大学.png"
+    "logo": "/member_logos_circular/华北理工大学.png",
+    "link": ""
   },
   {
     "id": 8,
     "name": "华北电力保定校区东方同好会",
-    "logo": "/member_logos_circular/华北电力保定校区.png"
+    "logo": "/member_logos_circular/华北电力保定校区.png",
+    "link": ""
   },
   {
     "id": 9,
     "name": "唐山二中东方同好会",
-    "logo": "/member_logos_circular/唐山二中.png"
+    "logo": "/member_logos_circular/唐山二中.png",
+    "link": ""
   },
   {
     "id": 10,
     "name": "唐山学院东方同好会",
-    "logo": "/member_logos_circular/唐山学院.png"
+    "logo": "/member_logos_circular/唐山学院.png",
+    "link": ""
   },
   {
     "id": 11,
     "name": "唐山工业职业技术大学东方同好会",
-    "logo": "/member_logos_circular/唐山工业职业技术大学.png"
+    "logo": "/member_logos_circular/唐山工业职业技术大学.png",
+    "link": ""
   },
   {
     "id": 12,
     "name": "唐山遵化市第一中学东方同好会",
-    "logo": "/member_logos_circular/唐山遵化市第一中学.png"
+    "logo": "/member_logos_circular/唐山遵化市第一中学.png",
+    "link": ""
   },
   {
     "id": 13,
     "name": "应急管理大学东方同好会",
-    "logo": "/member_logos_circular/应急管理大学.png"
+    "logo": "/member_logos_circular/应急管理大学.png",
+    "link": "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=_Q-B2k8rJpWmDO-HT7wvNRLC4QXvIYNI&authKey=FIpFhkMhMAlLi7gDdymCsg3%2F9GyM4DF88%2BgLWh1F526vFzZqX9caKc%2FThYHmH4q6&noverify=0&group_code=152457853"
   },
   {
     "id": 14,
     "name": "廊坊大城县第一中学东方同好会",
-    "logo": "/member_logos_circular/廊坊大城县第一中学.png"
+    "logo": "/member_logos_circular/廊坊大城县第一中学.png",
+    "link": ""
   },
   {
     "id": 15,
     "name": "廊坊师范学院东方同好会",
-    "logo": "/member_logos_circular/廊坊师范学院.png"
+    "logo": "/member_logos_circular/廊坊师范学院.png",
+    "link": ""
   },
   {
     "id": 16,
     "name": "张家口学院东方同好会",
-    "logo": "/member_logos_circular/张家口学院.png"
+    "logo": "/member_logos_circular/张家口学院.png",
+    "link": ""
   },
   {
     "id": 17,
     "name": "张家口第一中学东方同好会",
-    "logo": "/member_logos_circular/张家口第一中学.png"
+    "logo": "/member_logos_circular/张家口第一中学.png",
+    "link": ""
   },
   {
     "id": 18,
     "name": "武安市第一中学东方同好会",
-    "logo": "/member_logos_circular/武安市第一中学.png"
+    "logo": "/member_logos_circular/武安市第一中学.png",
+    "link": ""
   },
   {
     "id": 19,
     "name": "沧州医学高等专科学校东方同好会",
-    "logo": "/member_logos_circular/沧州医学高等专科学校.png"
+    "logo": "/member_logos_circular/沧州医学高等专科学校.png",
+    "link": ""
   },
   {
     "id": 20,
     "name": "沧州市第一中学东方同好会",
-    "logo": "/member_logos_circular/沧州市第一中学.png"
+    "logo": "/member_logos_circular/沧州市第一中学.png",
+    "link": ""
   },
   {
     "id": 21,
     "name": "沧州泊头市第一中学东方同好会",
-    "logo": "/member_logos_circular/沧州泊头市第一中学.png"
+    "logo": "/member_logos_circular/沧州泊头市第一中学.png",
+    "link": ""
   },
   {
     "id": 22,
     "name": "沧州泊头市闻知高级中学东方同好会",
-    "logo": "/member_logos_circular/沧州泊头市闻知高级中学.png"
+    "logo": "/member_logos_circular/沧州泊头市闻知高级中学.png",
+    "link": ""
   },
   {
     "id": 23,
     "name": "河北中医药大学东方同好会",
-    "logo": "/member_logos_circular/河北中医药大学.png"
+    "logo": "/member_logos_circular/河北中医药大学.png",
+    "link": ""
   },
   {
     "id": 24,
     "name": "河北农业大学东方同好会",
-    "logo": "/member_logos_circular/河北农业大学.png"
+    "logo": "/member_logos_circular/河北农业大学.png",
+    "link": ""
   },
   {
     "id": 25,
     "name": "河北医科大学东方同好会",
-    "logo": "/member_logos_circular/河北医科大学.png"
+    "logo": "/member_logos_circular/河北医科大学.png",
+    "link": ""
   },
   {
     "id": 26,
     "name": "河北地质大学东方同好会",
-    "logo": "/member_logos_circular/河北地质大学.png"
+    "logo": "/member_logos_circular/河北地质大学.png",
+    "link": ""
   },
   {
     "id": 27,
     "name": "河北大学东方同好会",
-    "logo": "/member_logos_circular/河北大学.png"
+    "logo": "/member_logos_circular/河北大学.png",
+    "link": ""
   },
   {
     "id": 28,
     "name": "河北对外经贸职业学院东方同好会",
-    "logo": "/member_logos_circular/河北对外经贸职业学院.png"
+    "logo": "/member_logos_circular/河北对外经贸职业学院.png",
+    "link": ""
   },
   {
     "id": 29,
-    "name": "河北工业大学 东方同好会",
-    "logo": "/member_logos_circular/河北工业大学 .png"
+    "name": "河北工业大学东方同好会",
+    "logo": "/member_logos_circular/河北工业大学.png",
+    "link": "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=Yz5ESTSFXE3neiPOS1S7CWZtkrc9mgfR&authKey=vP%2FFOQiwonzEmXCCJi3Y6Q%2BH9cYa76imBkDqF9JjUmnSjVmU5ZkebH28Yn%2FIUGxr&noverify=0&group_code=1062463145"
   },
   {
     "id": 30,
     "name": "河北工业职业技术大学东方同好会",
-    "logo": "/member_logos_circular/河北工业职业技术大学.png"
+    "logo": "/member_logos_circular/河北工业职业技术大学.png",
+    "link": ""
   },
   {
     "id": 31,
     "name": "河北工程大学东方同好会",
-    "logo": "/member_logos_circular/河北工程大学.png"
+    "logo": "/member_logos_circular/河北工程大学.png",
+    "link": ""
   },
   {
     "id": 32,
     "name": "河北师范大学东方同好会",
-    "logo": "/member_logos_circular/河北师范大学.png"
+    "logo": "/member_logos_circular/河北师范大学.png",
+    "link": ""
   },
   {
     "id": 33,
     "name": "河北建筑工程学院东方同好会",
-    "logo": "/member_logos_circular/河北建筑工程学院.png"
+    "logo": "/member_logos_circular/河北建筑工程学院.png",
+    "link": ""
   },
   {
     "id": 34,
     "name": "河北机电职业技术学院东方同好会",
-    "logo": "/member_logos_circular/河北机电职业技术学院.png"
+    "logo": "/member_logos_circular/河北机电职业技术学院.png",
+    "link": ""
   },
   {
     "id": 35,
     "name": "河北正定中学东方同好会",
-    "logo": "/member_logos_circular/河北正定中学.png"
+    "logo": "/member_logos_circular/河北正定中学.png",
+    "link": ""
   },
   {
     "id": 36,
     "name": "河北水利电力学院东方同好会",
-    "logo": "/member_logos_circular/河北水利电力学院.png"
-  },
-  {
-    "id": 37,
-    "name": "河北水利电力学院电力工程系东方同好会",
-    "logo": "/member_logos_circular/河北水利电力学院电力工程系.png"
+    "logo": "/member_logos_circular/河北水利电力学院.png",
+    "link": ""
   },
   {
     "id": 38,
     "name": "河北科技大学东方同好会",
-    "logo": "/member_logos_circular/河北科技大学.png"
+    "logo": "/member_logos_circular/河北科技大学.png",
+    "link": ""
   },
   {
     "id": 39,
     "name": "河北经贸大学东方同好会",
-    "logo": "/member_logos_circular/河北经贸大学.png"
+    "logo": "/member_logos_circular/河北经贸大学.png",
+    "link": ""
   },
   {
     "id": 40,
     "name": "河北艺术职业学院东方同好会",
-    "logo": "/member_logos_circular/河北艺术职业学院.png"
+    "logo": "/member_logos_circular/河北艺术职业学院.png",
+    "link": ""
   },
   {
     "id": 41,
     "name": "河北软件职业技术学院东方同好会",
-    "logo": "/member_logos_circular/河北软件职业技术学院.png"
+    "logo": "/member_logos_circular/河北软件职业技术学院.png",
+    "link": ""
   },
   {
     "id": 42,
     "name": "燕京理工学院东方同好会",
-    "logo": "/member_logos_circular/燕京理工学院.png"
+    "logo": "/member_logos_circular/燕京理工学院.png",
+    "link": "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=y-zVeNpkuYvgSQv_BLOKQYQPqK_U72Kg&authKey=CcXiWUvErVLSg0KBpX5CfdjSdspNP65y5S%2FqveScF9X0J5x%2B%2F5IeDfZd25r0DzjT&noverify=0&group_code=1042238824"
   },
   {
     "id": 43,
     "name": "燕山大学东方同好会",
-    "logo": "/member_logos_circular/燕山大学.png"
+    "logo": "/member_logos_circular/燕山大学.png",
+    "link": ""
   },
   {
     "id": 44,
     "name": "石家庄二中东方同好会",
-    "logo": "/member_logos_circular/石家庄二中.png"
+    "logo": "/member_logos_circular/石家庄二中.png",
+    "link": ""
   },
   {
     "id": 45,
     "name": "石家庄信息工程职业学院东方同好会",
-    "logo": "/member_logos_circular/石家庄信息工程职业学院.png"
+    "logo": "/member_logos_circular/石家庄信息工程职业学院.png",
+    "link": ""
   },
   {
     "id": 46,
     "name": "石家庄学院东方同好会",
-    "logo": "/member_logos_circular/石家庄学院.png"
+    "logo": "/member_logos_circular/石家庄学院.png",
+    "link": ""
   },
   {
     "id": 47,
-    "name": "石家庄学院2东方同好会",
-    "logo": "/member_logos_circular/石家庄学院2.png"
+    "name": "石家庄职业技术学院东方同好会",
+    "logo": "/member_logos_circular/石家庄职业技术学院.png",
+    "link": ""
   },
   {
     "id": 48,
-    "name": "石家庄职业技术学院东方同好会",
-    "logo": "/member_logos_circular/石家庄职业技术学院.png"
+    "name": "石家庄铁道大学东方同好会",
+    "logo": "/member_logos_circular/石家庄铁道大学.png",
+    "link": ""
   },
   {
     "id": 49,
-    "name": "石家庄铁道大学东方同好会",
-    "logo": "/member_logos_circular/石家庄铁道大学.png"
+    "name": "衡水中学东方同好会",
+    "logo": "/member_logos_circular/衡水中学.png",
+    "link": ""
   },
   {
     "id": 50,
-    "name": "衡水中学东方同好会",
-    "logo": "/member_logos_circular/衡水中学.png"
+    "name": "衡水中学实验学校东方同好会",
+    "logo": "/member_logos_circular/衡水中学实验学校.png",
+    "link": ""
   },
   {
     "id": 51,
-    "name": "衡水中学实验学校东方同好会",
-    "logo": "/member_logos_circular/衡水中学实验学校.png"
+    "name": "衡水市第七中学东方同好会",
+    "logo": "/member_logos_circular/衡水市第七中学.png",
+    "link": ""
   },
   {
     "id": 52,
-    "name": "衡水市第七中学东方同好会",
-    "logo": "/member_logos_circular/衡水市第七中学.png"
+    "name": "衡水市第二中学东方同好会",
+    "logo": "/member_logos_circular/衡水市第二中学.png",
+    "link": ""
   },
   {
     "id": 53,
-    "name": "衡水市第二中学东方同好会",
-    "logo": "/member_logos_circular/衡水市第二中学.png"
+    "name": "衡水市第十四中学东方同好会",
+    "logo": "/member_logos_circular/衡水市第十四中学.png",
+    "link": ""
   },
   {
     "id": 54,
-    "name": "衡水市第十四中学东方同好会",
-    "logo": "/member_logos_circular/衡水市第十四中学.png"
+    "name": "衡水街关中学东方同好会",
+    "logo": "/member_logos_circular/衡水街关中学.png",
+    "link": ""
   },
   {
     "id": 55,
-    "name": "衡水街关中学东方同好会",
-    "logo": "/member_logos_circular/衡水街关中学.png"
+    "name": "邯郸学院东方同好会",
+    "logo": "/member_logos_circular/邯郸学院.png",
+    "link": ""
   },
   {
     "id": 56,
-    "name": "邯郸学院东方同好会",
-    "logo": "/member_logos_circular/邯郸学院.png"
-  },
-  {
-    "id": 57,
     "name": "邯郸职业技术学院东方同好会",
-    "logo": "/member_logos_circular/邯郸职业技术学院.png"
+    "logo": "/member_logos_circular/邯郸职业技术学院.png",
+    "link": ""
   }
 ]

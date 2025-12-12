@@ -32,14 +32,14 @@ def create_circular_image(image_path, output_path):
         print(f"Error processing {image_path}: {e}")
 
 def main():
-    input_dir = 'public/member_logos'
+    input_dir = './'
     output_dir = 'public/member_logos_circular'
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     for filename in os.listdir(input_dir):
-        if filename.lower().endswith('.png'):
+        if filename.lower().endswith('.jpg'):
             image_path = os.path.join(input_dir, filename)
             output_filename = os.path.splitext(filename)[0] + '.png'
             output_path = os.path.join(output_dir, output_filename)
