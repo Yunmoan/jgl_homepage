@@ -27,6 +27,7 @@ interface Article {
   image: string;
   summary: string;
   content: string;
+  author: string;
 }
 
 const emit = defineEmits(['select-article']);

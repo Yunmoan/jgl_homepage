@@ -24,6 +24,7 @@ interface Article {
   image: string;
   summary: string;
   content: string;
+  author: string;
 }
 
 const isDialogVisible = ref(false);
