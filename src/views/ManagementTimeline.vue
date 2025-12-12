@@ -69,7 +69,7 @@ onMounted(async () => {
 
 <style scoped>
 .management-timeline {
-  padding: 3rem 8rem;
+  padding: 4rem 8rem;
   max-width: 1400px;
   margin: 0 auto;
   color: #d8e3e7;

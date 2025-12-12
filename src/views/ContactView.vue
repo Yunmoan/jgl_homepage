@@ -40,7 +40,7 @@
 
 .content {
   background-color: rgba(58, 103, 239, 0.411);
-  padding: 2.5rem;
+  padding: 1.5rem;
   border-radius: 8px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.1);

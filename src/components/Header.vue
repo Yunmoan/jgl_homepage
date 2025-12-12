@@ -243,7 +243,7 @@ onUnmounted(() => {
 
 .main-nav a .en {
   font-family: 'Times New Roman', Times, serif;
-  font-size: 0.75rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 1px;
 }

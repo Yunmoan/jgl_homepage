@@ -2,10 +2,15 @@
   <transition name="dialog-fade">
     <div v-if="show" class="dialog-overlay" @click.self="close">
       <div class="dialog-content">
-        <header class="dialog-header">
-          <h2 v-if="article" class="dialog-title">{{ article.title }}</h2>
+        <div class="dialog-header">
+          <img v-if="article && article.image" :src="article.image" :alt="article.title" class="header-image">
+          <div class="header-overlay"></div>
+          <div class="header-content">
+            <h2 v-if="article" class="dialog-title">{{ article.title }}</h2>
+            <p v-if="article && article.date" class="dialog-date">{{ article.date }} · 作者：{{ article.author }}</p>
+          </div>
           <button class="close-button" @click="close" aria-label="Close dialog">&times;</button>
-        </header>
+        </div>
         <div class="dialog-body" v-html="articleContent"></div>
       </div>
     </div>
@@ -13,13 +18,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch, onUnmounted } from 'vue';
 import { marked } from 'marked';
 
 interface Article {
   id: number;
   title: string;
   date: string;
+  author: string;
   image: string;
   summary: string;
   content: string;
@@ -42,6 +48,19 @@ const articleContent = computed(() => {
 function close() {
   emit('close');
 }
+
+watch(() => props.show, (newValue) => {
+  if (newValue) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+});
+
+onUnmounted(() => {
+  document.body.style.overflow = '';
+});
+
 </script>
 
 <style scoped>
@@ -63,7 +82,7 @@ function close() {
 .dialog-content {
   background-color: rgba(52, 81, 134, 0.881);
   color: #d8e3e7;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
   width: 90%;
@@ -76,35 +95,79 @@ function close() {
 }
 
 .dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  /* border-bottom: 1px solid rgba(255, 255, 255, 0.1); */
+  position: relative;
+  width: 100%;
+  height: 250px;
   flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.header-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.header-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  pointer-events: none;
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
+  padding: 1.5rem 2rem;
+  width: 100%;
 }
 
 .dialog-title {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 2rem;
   color: #fff;
   font-weight: bold;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  margin-bottom: 0.5rem;
+}
+
+.dialog-date {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #cbd5e0;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
 }
 
 .close-button {
-  background: transparent;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.5);
   border: none;
-  font-size: 2rem;
-  font-weight: 50;
-  color: #a0aec0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+  color: #fff;
   cursor: pointer;
-  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   line-height: 1;
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .close-button:hover {
-  color: #fff;
+  background: rgba(0, 0, 0, 0.8);
   transform: rotate(90deg);
 }
 

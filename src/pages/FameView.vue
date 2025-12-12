@@ -13,7 +13,7 @@
       <section id="hall" class="fade-in-section">
         <FameHall />
       </section>
-      <section id="history" class="fade-in-section">
+      <section id="historys" class="fade-in-section">
         <ManagementTimeline />
       </section>
 

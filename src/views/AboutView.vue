@@ -1,5 +1,5 @@
 <template>
-  <div class="about-view page-wrapper">
+  <div id="historys" class="about-view page-wrapper">
     <div class="container">
       <h2 class="page-title">关于我们</h2>
       <div class="content">
@@ -14,7 +14,9 @@
           <li>集结同好力量，进行东方Project相关的二次创作活动。</li>
         </ul>
         <p>无论你是刚刚接触东方的新朋友，还是资深的“老资历”，我们都热烈欢迎你的加入！</p>
+        <a href="/fames#historys" class="action-link">高联组成</a>
       </div>
+
     </div>
   </div>
 </template>
@@ -25,8 +27,29 @@
 .page-wrapper {
   padding: 120px 0 4rem;
   /* 80px for header + 40px top padding */
+}
 
+.action-link {
+  display: inline-block;
+  font-size: .9rem;
+  background-color: rgba(231, 163, 62, 0.76);
+  /* Gold color from header */
+  color: #fff;
+  padding: 0.5rem 1.3rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s, transform 0.3s;
+}
 
+.action-link:hover {
+  background-color: rgba(231, 163, 62, 0.6);
+}
+
+.action-link::after {
+  content: ' →';
+  /* Simple arrow icon */
+  margin-left: 0.5rem;
 }
 
 .page-title {

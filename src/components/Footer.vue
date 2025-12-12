@@ -35,7 +35,7 @@
           <h4>快速链接</h4>
           <ul>
             <li><router-link to="/fames">名人堂</router-link></li>
-            <li><router-link to="/fames#history">历届高联管理层</router-link></li>
+            <li><router-link to="/fames#historys">历届高联管理层</router-link></li>
           </ul>
         </div>
       </div>
@@ -49,10 +49,10 @@
       </div>
       <hr class="footer-divider">
       <div class="footer-bottom">
-        <p>&copy; 2025 河北东方高校联合会. All Rights Reserved.
+        <p>&copy; {{ currentYear }} 河北东方高校联合会. 保留所有权利.
           <br />
-          Designed with ♥<a href="//github.com/Yunmoan" target="_blank">云默安</a> | Developed by <a href="//www.zyghit.cn"
-            target="_blank">ZGIT Network</a>
+          Designed with ♥<a href="https://github.com/Yunmoan" target="_blank">云默安</a> | Developed by <a
+            href="https://www.zyghit.cn" target="_blank">ZGIT Network</a>
         </p>
         <div class="build-info">
           <svg class="git-icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg"
@@ -71,6 +71,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+
+const currentYear = new Date().getFullYear();
 
 interface FriendLink {
   title: string;
@@ -226,7 +228,7 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
 .footer-bottom {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: left;
   flex-wrap: nowrap;
   gap: 1rem;
   font-size: 14px;
@@ -239,7 +241,7 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
 
 .build-info {
   display: flex;
-  align-items: center;
+  align-items: left;
   justify-content: flex-end;
   font-size: 12px;
   color: #8b949e;
@@ -264,8 +266,9 @@ a:hover {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .footer-bottom {
-    justify-content: center;
-    text-align: center;
+    flex-direction: column;
+    justify-content: left;
+    text-align: left;
   }
 
   .footer-main-content {
@@ -276,11 +279,11 @@ a:hover {
 
   .footer-column {
     width: 100%;
-    max-width: 350px;
+    max-width: 100%;
   }
 
   .build-info {
-    justify-content: center;
+    justify-content: left;
     text-align: center;
     width: 100%;
     margin-top: 0.5rem;
