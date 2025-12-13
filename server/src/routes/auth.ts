@@ -2,7 +2,15 @@ import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { RowDataPacket } from 'mysql2'
 import pool from '../db'
+
+interface User extends RowDataPacket {
+  id: number
+  username: string
+  password: string
+  role: string
+}
 import config from '../config'
 
 // Login rate limiter
@@ -58,7 +66,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
   try {
     // Find user in database
-    const [users] = await pool.query('SELECT * FROM users WHERE username = ?', [username])
+    const [users] = await pool.query<User[]>('SELECT * FROM users WHERE username = ?', [username])
     const user = Array.isArray(users) ? users[0] : undefined
 
     if (!user) {
