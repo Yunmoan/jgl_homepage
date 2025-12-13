@@ -52,7 +52,7 @@ const error = ref<string | null>(null);
 
 onMounted(async () => {
   try {
-    const response = await fetch('/data/admins_history.json');
+    const response = await fetch('/api/admin-history');
     if (!response.ok) {
       throw new Error('网络响应错误');
     }

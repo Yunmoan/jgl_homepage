@@ -18,6 +18,16 @@ const router = createRouter({
       name: 'fames',
       component: () => import('../pages/FameView.vue'),
     },
+    {
+      path: '/messages',
+      name: 'messages',
+      component: () => import('../pages/MessagesPage.vue'),
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../pages/NotFound.vue'),
+    },
   ],
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {

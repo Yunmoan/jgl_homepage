@@ -1,0 +1,97 @@
+:root {
+  /* Primary Theme */
+  --el-color-primary: #3a7afe;
+  --el-color-success: #10b981;
+  --el-color-warning: #f59e0b;
+  --el-color-danger:  #ef4444;
+
+  /* Layout */
+  --app-bg: #f6f7fb;
+  --header-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --text-color: #1f2330;
+  --muted-text: #6b7280;
+  --page-padding: 20px;
+
+  /* Radius & Shadow */
+  --radius-base: 10px;
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.dark {
+  --app-bg: #121212;
+  --header-bg: #1a1a1a;
+  --sidebar-bg: #141414;
+  --card-bg: #1a1a1a;
+  --text-color: rgba(255, 255, 255, 0.87);
+  --muted-text: rgba(255, 255, 255, 0.55);
+}
+
+html, body, #app { height: 100%; }
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--app-bg);
+  color: var(--text-color);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--el-color-primary); text-decoration: none; }
+a:hover { opacity: 0.9; }
+
+/* Global containers */
+.page-container { padding: var(--page-padding); }
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.controls h1 {
+  font-size: 18px;
+  line-height: 1.2;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Element Plus tweaks */
+.el-card { border-radius: var(--radius-base); box-shadow: var(--shadow-card); }
+.el-dialog { border-radius: var(--radius-base); }
+.el-button { border-radius: 8px; }
+
+/* Tables */
+.el-table { background-color: var(--card-bg); border-radius: var(--radius-base); }
+.el-table th, .el-table td { /* reduce density slightly with global size=small */ }
+
+/* Upload preview image */
+.image-uploader .image {
+  width: 178px;
+  height: 178px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: var(--shadow-card);
+}
+.image-uploader .el-upload {
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: var(--el-transition-duration-fast);
+}
+.image-uploader .el-upload:hover { border-color: var(--el-color-primary); }
+.el-icon.image-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -38,7 +38,7 @@ const members = ref<Member[]>([]);
 
 onMounted(async () => {
   try {
-    const response = await fetch('/data/fames_member.json');
+    const response = await fetch('/api/fame-members');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }

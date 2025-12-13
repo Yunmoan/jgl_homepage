@@ -94,7 +94,7 @@ const onSlideChange = (swiper: SwiperType) => {
 
 onMounted(async () => {
   try {
-    const response = await fetch('/data/history.json');
+    const response = await fetch('/api/history');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }

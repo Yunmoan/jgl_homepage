@@ -7,7 +7,7 @@
           <div class="header-overlay"></div>
           <div class="header-content">
             <h2 v-if="article" class="dialog-title">{{ article.title }}</h2>
-            <p v-if="article && article.date" class="dialog-date">{{ article.date }} · 作者：{{ article.author }}</p>
+            <p v-if="article && article.date" class="dialog-date">{{ formattedDate }} · 作者：{{ article.author }}</p>
           </div>
           <button class="close-button" @click="close" aria-label="Close dialog">&times;</button>
         </div>
@@ -43,6 +43,23 @@ const articleContent = computed(() => {
     return marked(props.article.content);
   }
   return '';
+});
+
+const formattedDate = computed(() => {
+  if (!props.article || !props.article.date) {
+    return '';
+  }
+  const date = new Date(props.article.date);
+  const utc8Date = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+
+  const year = utc8Date.getUTCFullYear();
+  const month = (utc8Date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = utc8Date.getUTCDate().toString().padStart(2, '0');
+  const hours = utc8Date.getUTCHours().toString().padStart(2, '0');
+  const minutes = utc8Date.getUTCMinutes().toString().padStart(2, '0');
+  const seconds = utc8Date.getUTCSeconds().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 });
 
 function close() {
@@ -87,8 +104,8 @@ onUnmounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.1);
   width: 90%;
   max-width: 960px;
-  height: 85%;
-  max-height: 80vh;
+  /* height: 85%; */
+  max-height: 90%;
   display: flex;
   flex-direction: column;
   overflow: hidden;

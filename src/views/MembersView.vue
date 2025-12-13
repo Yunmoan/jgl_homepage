@@ -4,92 +4,124 @@
       <h2 class="page-title">成员社团 / MEMBERS</h2><br />
       <span>不分先后，按拼音字母顺序排序</span>
       <div class="members-grid">
-        <component :is="member.link ? 'a' : 'div'" v-for="(member, index) in displayedMembers" :key="member.id"
-          :href="member.link || null" :target="member.link ? '_blank' : null"
-          :rel="member.link ? 'noopener noreferrer' : null" class="member-card">
-          <img :src="member.logo" :alt="member.name" class="member-logo" @error="onImageError" loading="lazy">
-          <span class="member-name">{{ member.name }}</span>
-        </component>
+        <MemberCard v-for="member in displayedMembers" :key="member.id" :member="member" @image-error="onImageError" />
       </div>
       <div ref="observerTarget" class="observer-target"></div>
+      <!-- Loading indicator -->
+      <div v-if="isLoading" class="loading-indicator">
+        <div class="spinner"></div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, shallowRef } from 'vue';
+import MemberCard from '../components/MemberCard.vue';
 
 interface Member {
   id: number;
   name: string;
   logo: string;
-  link?: string; // Add optional link property
+  link?: string;
 }
 
-const allMembers = ref<Member[]>([]);
-const displayedMembers = ref<Member[]>([]);
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+// Use shallowRef to avoid deep reactivity overhead
+const displayedMembers = shallowRef<Member[]>([]);
 const observerTarget = ref<HTMLElement | null>(null);
 const observer = ref<IntersectionObserver | null>(null);
-const membersPerPage = 18; // Number of members to load at a time
-let page = 1;
+const membersPerPage = 18;
+const currentPage = ref(1);
+const paginationInfo = ref<PaginationInfo | null>(null);
+const isLoading = ref(false);
 
 const onImageError = (event: Event) => {
   const target = event.target as HTMLImageElement;
-  target.src = '/placeholder.svg'; // Local placeholder image
+  target.src = '/placeholder.svg';
 };
 
-const loadMoreMembers = () => {
-  if (allMembers.value.length === 0) return;
+const loadMoreMembers = async () => {
+  if (isLoading.value) return;
 
-  const start = (page - 1) * membersPerPage;
-  const end = start + membersPerPage;
-  const newMembers = allMembers.value.slice(start, end);
-
-  if (newMembers.length > 0) {
-    displayedMembers.value.push(...newMembers);
-    page++;
-  } else {
-    // No more members to load, disconnect observer
+  if (paginationInfo.value && !paginationInfo.value.hasNextPage) {
     if (observer.value) {
       observer.value.disconnect();
     }
+    return;
+  }
+
+  isLoading.value = true;
+  try {
+    const response = await fetch(
+      `/api/members?page=${currentPage.value}&limit=${membersPerPage}`,
+      {
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const result = await response.json();
+    const { data, pagination } = result;
+
+    if (data && data.length > 0) {
+      // Use shallow update to avoid deep reactivity
+      const newMembers = [...displayedMembers.value, ...data];
+      displayedMembers.value = newMembers;
+      paginationInfo.value = pagination;
+      currentPage.value++;
+    }
+  } catch (error) {
+    console.error('Failed to fetch members data:', error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
 onMounted(() => {
-  // Use setTimeout to de-prioritize the data fetching and processing
-  // allowing the component to mount and render first.
-  setTimeout(async () => {
-    try {
-      const response = await fetch('/data/members_generated.json');
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      allMembers.value = await response.json();
-      loadMoreMembers(); // Load initial batch
-
-      await nextTick();
-
-      if (observerTarget.value) {
-        const observerOptions = {
-          rootMargin: '0px 0px 500px 0px', // Start loading 500px before the target is visible
-          threshold: 0.1
-        };
-
-        observer.value = new IntersectionObserver((entries) => {
-          const [entry] = entries;
-          if (entry?.isIntersecting) {
-            loadMoreMembers();
-          }
-        }, observerOptions);
-        observer.value.observe(observerTarget.value);
-      }
-
-    } catch (error) {
-      console.error('Failed to fetch members data:', error);
-    }
-  }, 100); // A small delay is enough
+  // Use requestIdleCallback for non-critical initialization
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      initializeMembers();
+    }, { timeout: 2000 });
+  } else {
+    setTimeout(initializeMembers, 100);
+  }
 });
+
+const initializeMembers = async () => {
+  try {
+    await loadMoreMembers();
+
+    if (observerTarget.value) {
+      const observerOptions = {
+        rootMargin: '0px 0px 500px 0px',
+        threshold: 0.01 // Reduced threshold for better performance
+      };
+
+      observer.value = new IntersectionObserver((entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting && !isLoading.value) {
+          loadMoreMembers();
+        }
+      }, observerOptions);
+      observer.value.observe(observerTarget.value);
+    }
+  } catch (error) {
+    console.error('Failed to initialize members view:', error);
+  }
+};
 
 onUnmounted(() => {
   if (observer.value) {
@@ -125,54 +157,34 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1.5rem;
-}
-
-.member-card {
-  background-color: rgba(30, 41, 59, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 1.1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-  min-height: 180px;
-  /* Added to prevent layout shift */
-  text-decoration: none;
-  /* Remove underline from links */
-  color: inherit;
-  /* Inherit text color */
-}
-
-
-
-.member-card:hover {
-  /* background-color: rgba(30, 41, 59, 0.6); */
-  box-shadow: 0 8px 10px rgba(0, 0, 0, 0.5);
-}
-
-.member-logo {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 1.2rem;
-  background-color: #fff;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-.member-name {
-  color: #e2e8f0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-align: center;
+  /* Optimize rendering performance */
+  contain: layout style paint;
 }
 
 .observer-target {
   height: 20px;
+}
+
+.loading-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* PC Styles */
@@ -192,23 +204,6 @@ onUnmounted(() => {
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
   }
-
-  .member-card {
-    padding: 1rem;
-    border-radius: 8px;
-    min-height: 160px;
-    /* Adjust for mobile */
-  }
-
-  .member-logo {
-    width: 100px;
-    height: 100px;
-    margin-bottom: 0.8rem;
-  }
-
-  .member-name {
-    font-size: 0.8rem;
-  }
 }
 
 @media (max-width: 480px) {
@@ -216,14 +211,9 @@ onUnmounted(() => {
     font-size: 2rem;
   }
 
-  .member-card {
-    min-height: 140px;
-    /* Adjust for smaller mobile */
-  }
-
-  .member-logo {
-    width: 70px;
-    height: 70px;
+  .members-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
   }
 }
 </style>

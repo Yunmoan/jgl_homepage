@@ -4,7 +4,7 @@
     <transition name="list-fade" mode="out-in">
       <ul class="news-list" :key="currentPage">
         <li v-for="article in paginatedNews" :key="article.id" @click="selectArticle(article)" class="news-list-item">
-          <span class="news-date">{{ article.date }}</span>
+          <span class="news-date">{{ formatDate(article.date) }}</span>
           <span class="news-title">{{ article.title }}</span>
         </li>
       </ul>
@@ -32,11 +32,28 @@ interface Article {
 
 const emit = defineEmits(['select-article']);
 
+const formatDate = (dateString: string) => {
+  if (!dateString) {
+    return '';
+  }
+  const date = new Date(dateString);
+  const utc8Date = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+
+  const year = utc8Date.getUTCFullYear();
+  const month = (utc8Date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = utc8Date.getUTCDate().toString().padStart(2, '0');
+  const hours = utc8Date.getUTCHours().toString().padStart(2, '0');
+  const minutes = utc8Date.getUTCMinutes().toString().padStart(2, '0');
+  const seconds = utc8Date.getUTCSeconds().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 const news = ref<Article[]>([]);
 
 onMounted(async () => {
   try {
-    const response = await fetch('/data/news.json');
+    const response = await fetch('/api/news');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }

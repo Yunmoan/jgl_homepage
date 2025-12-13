@@ -31,9 +31,13 @@
       <section id="news" class="fade-in-section">
         <NewsSection @select-article="onArticleSelected" />
       </section>
+      <section id="messages" class="fade-in-section">
+        <MessagesView />
+      </section>
       <section id="members" class="fade-in-section">
         <MembersView />
       </section>
+
       <section id="contact">
         <ContactView />
       </section>
@@ -48,6 +52,7 @@ import WorksView from '../views/WorksView.vue';
 import ContactView from '../views/ContactView.vue';
 import PictureView from '../views/PictureView.vue';
 import MembersView from '../views/MembersView.vue';
+import MessagesView from '../views/MessagesView.vue';
 import NewsSection from '../views/NewsSection.vue';
 
 const emit = defineEmits(['select-article']);

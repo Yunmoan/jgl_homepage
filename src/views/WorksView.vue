@@ -38,7 +38,7 @@ const works = ref<Work[]>([]);
 
 onMounted(async () => {
   try {
-    const response = await fetch('/data/works.json');
+    const response = await fetch('/api/works');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }

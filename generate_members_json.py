@@ -4,10 +4,10 @@ import re
 
 def generate_members_json():
     """
-    Scans the 'public/member_logos_circular' directory and generates a JSON file
+    Scans the 'server/uploads/member_logos_circular' directory and generates a JSON file
     with member data based on the image filenames.
     """
-    input_dir = 'public/member_logos_circular'
+    input_dir = 'server/uploads/member_logos_circular'
     output_file = 'public/data/members_generated.json'
     
     members = []
@@ -21,15 +21,15 @@ def generate_members_json():
     files = sorted(os.listdir(input_dir))
 
     for filename in files:
-        if filename.lower().endswith('.png'):
+        if filename.lower().endswith(('.png', '.webp', '.jpg', '.jpeg')):
             # Remove file extension
             name = os.path.splitext(filename)[0]
             
             # Remove potential hash at the end (e.g., _xxxxxx)
-            name = re.sub(r'_[0-9a-f]{6}$', '', name)
+            name = re.sub(r'_.*$', '', name)
             
-            # Create the logo path relative to the public folder
-            logo_path = f"/member_logos_circular/{filename}"
+            # Create the logo path
+            logo_path = f"/uploads/member_logos_circular/{filename}"
             
             members.append({
                 "id": member_id,
@@ -52,4 +52,3 @@ def generate_members_json():
 
 if __name__ == "__main__":
     generate_members_json()
-

@@ -21,13 +21,29 @@ try {
 // https://vite.dev/config/
 export default defineConfig({
   define: {
-    '__GIT_HASH__': JSON.stringify(gitHash),
-    '__GIT_DATE__': JSON.stringify(gitDate)
+    __GIT_HASH__: JSON.stringify(gitHash),
+    __GIT_DATE__: JSON.stringify(gitDate),
   },
   plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  }
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })
