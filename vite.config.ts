@@ -34,6 +34,16 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // '/api': {
+      //   target: 'http://www.hbutu.cn',
+      //   changeOrigin: true,
+      //   secure: false,
+      // },
+      // '/uploads': {
+      //   target: 'http://www.hbutu.cn',
+      //   changeOrigin: true,
+      //   secure: false,
+      // },
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,

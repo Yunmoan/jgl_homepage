@@ -3,9 +3,13 @@
     <div class="controls">
       <h1>留言管理</h1>
       <div>
+        <el-button type="primary" @click="fetchData();">
+          <span v-if="loading">刷新中...</span>
+          <span v-else>刷新</span>
+        </el-button>
         <el-button type="primary" @click="handleCreate">新增留言</el-button>
-        <el-upload action="/api/messages/import" :headers="{ Authorization: `Bearer ${token}` }"
-          :show-file-list="false" :on-success="handleSuccess" :on-error="handleError" :before-upload="beforeUpload"
+        <el-upload action="/api/messages/import" :headers="{ Authorization: `Bearer ${token}` }" :show-file-list="false"
+          :on-success="handleSuccess" :on-error="handleError" :before-upload="beforeUpload"
           style="display: inline-block; margin-left: 10px;">
           <el-button type="info">从 JSON 导入</el-button>
         </el-upload>

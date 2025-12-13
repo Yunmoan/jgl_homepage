@@ -88,20 +88,39 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const response = await axios.post(
-      `https://recaptcha.net/recaptcha/api/siteverify?secret=${config.recaptcha.secretKey}&response=${token}`,
-      {},
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
-        },
-      },
-    )
+    const secret = config.recaptcha.secretKey
+    if (!secret) {
+      console.error('RECAPTCHA_SECRET_KEY is not configured')
+      return res
+        .status(500)
+        .json({ error: '服务端未配置 reCAPTCHA Secret（RECAPTCHA_SECRET_KEY）' })
+    }
 
-    const { success, score } = response.data
-    if (!success || score < 0.5) {
-      // You can adjust the score threshold
-      return res.status(400).json({ error: 'reCAPTCHA verification failed' })
+    const params = new URLSearchParams()
+    params.append('secret', secret as string)
+    params.append('response', token)
+
+    const { data } = await axios.post('https://recaptcha.net/recaptcha/api/siteverify', params, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      timeout: 5000,
+    })
+
+    const { success, score, action, ['error-codes']: errorCodes } = data as any
+
+    if (!success) {
+      return res.status(400).json({ error: 'reCAPTCHA 验证失败', errorCodes })
+    }
+
+    if (typeof score === 'number' && score < 0.5) {
+      // 可根据需要调整分数阈值
+      return res.status(400).json({ error: 'reCAPTCHA 评分过低', score })
+    }
+
+    // 可选：校验 action 与前端 executeRecaptcha 的 action 一致
+    if (action && action !== 'submit_message') {
+      return res.status(400).json({ error: 'reCAPTCHA action 不匹配', action })
     }
 
     // 2. If verification is successful, proceed to save the message

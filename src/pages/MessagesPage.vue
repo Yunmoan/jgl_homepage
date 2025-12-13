@@ -227,9 +227,31 @@ const submitMessage = async () => {
       }),
     });
 
+    const contentType = response.headers.get('content-type') || ''
+    let data: any = null
+    try {
+      if (contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        const text = await response.text()
+        try { data = JSON.parse(text) } catch { data = { raw: text } }
+      }
+    } catch (_) {
+      // ignore parse error
+    }
+
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || '提交失败，请稍后重试。');
+      const codes: string[] = Array.isArray(data?.errorCodes) ? data.errorCodes : []
+      let msg = data?.error || data?.message || ''
+      if (!msg && codes.includes('invalid-input-response')) {
+        msg = 'reCAPTCHA 响应无效，请刷新页面后重试。'
+      }
+      const extras: string[] = []
+      if (codes.length) extras.push(`错误码：${codes.join(', ')}`)
+      if (typeof data?.score === 'number') extras.push(`评分：${data.score}`)
+      if (data?.action) extras.push(`action：${data.action}`)
+      const detail = extras.length ? `（${extras.join('；')}）` : ''
+      throw new Error(msg ? `${msg}${detail}` : `提交失败（HTTP ${response.status}）`)
     }
 
     alert('留言提交成功！感谢您的留言，审核通过后将会显示。');
@@ -241,7 +263,7 @@ const submitMessage = async () => {
 
   } catch (error: any) {
     console.error('Submission error:', error);
-    alert(error.message || '提交时发生错误，请检查网络连接或稍后重试。');
+    alert(error?.message || '提交时发生错误，请检查网络连接或稍后重试。');
   } finally {
     isSubmitting.value = false;
   }

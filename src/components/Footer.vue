@@ -34,6 +34,7 @@
         <div class="footer-column">
           <h4>快速链接</h4>
           <ul>
+            <li><router-link to="/messages">留言板</router-link></li>
             <li><router-link to="/fames">名人堂</router-link></li>
             <li><router-link to="/fames#historys">历届高联管理层</router-link></li>
           </ul>
@@ -83,7 +84,7 @@ const friendLinks = ref<FriendLink[]>([]);
 
 onMounted(async () => {
   try {
-    const response = await fetch('/data/friend_link.json');
+    const response = await fetch('/api/friend-Links');
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
