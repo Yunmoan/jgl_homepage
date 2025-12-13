@@ -14,9 +14,10 @@
         </template>
       </el-table-column>
       <el-table-column prop="created_at" label="创建时间" />
-      <el-table-column label="操作" width="200">
+      <el-table-column label="操作" width="300">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.row)">修改角色</el-button>
+          <el-button size="small" type="warning" @click="openResetPwd(scope.row)">重置密码</el-button>
           <el-button size="small" type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -45,6 +46,26 @@
         </span>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="resetPwdVisible" title="重置密码" width="420px">
+      <el-form :model="resetPwdForm" label-width="100px">
+        <el-form-item label="用户名">
+          <el-input v-model="resetPwdForm.username" disabled />
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="resetPwdForm.newPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="确认新密码">
+          <el-input v-model="resetPwdForm.confirmPassword" type="password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="resetPwdVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitResetPwd">提交</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -70,6 +91,15 @@ const form = reactive<Partial<User> & { password?: string }>({
   username: '',
   password: '',
   role: 'viewer',
+});
+
+// Reset password dialog for admin action
+const resetPwdVisible = ref(false);
+const resetPwdForm = reactive<{ id?: number; username: string; newPassword: string; confirmPassword: string }>({
+  id: undefined,
+  username: '',
+  newPassword: '',
+  confirmPassword: '',
 });
 
 const dialogTitle = computed(() => (isEditMode.value ? '修改用户角色' : '创建新用户'));
@@ -106,6 +136,28 @@ const handleEdit = (row: User) => {
   dialogVisible.value = true;
 };
 
+const openResetPwd = (row: User) => {
+  resetPwdForm.id = row.id;
+  resetPwdForm.username = row.username;
+  resetPwdForm.newPassword = '';
+  resetPwdForm.confirmPassword = '';
+  resetPwdVisible.value = true;
+};
+
+const submitResetPwd = async () => {
+  if (!resetPwdForm.newPassword) return ElMessage.error('请输入新密码');
+  if (resetPwdForm.newPassword.length < 6) return ElMessage.error('新密码至少 6 位');
+  if (resetPwdForm.newPassword !== resetPwdForm.confirmPassword) return ElMessage.error('两次输入的新密码不一致');
+  try {
+    await apiClient.put(`/users/${resetPwdForm.id}/password`, { newPassword: resetPwdForm.newPassword });
+    ElMessage.success('密码重置成功');
+    resetPwdVisible.value = false;
+  } catch (err: any) {
+    const msg = err?.response?.data?.error || '密码重置失败';
+    ElMessage.error(msg);
+  }
+};
+
 const handleSave = async () => {
   try {
     if (isEditMode.value) {
@@ -117,8 +169,9 @@ const handleSave = async () => {
     }
     dialogVisible.value = false;
     fetchData();
-  } catch (error) {
-    ElMessage.error('操作失败');
+  } catch (error: any) {
+    const msg = error?.response?.data?.error || '操作失败';
+    ElMessage.error(msg);
   }
 };
 

@@ -18,6 +18,10 @@ import path from 'path'
 const app = express()
 const port = config.server.port
 
+// If running behind a reverse proxy (e.g., Nginx), enable trust proxy so req.ip works correctly
+// and libraries like express-rate-limit can safely use X-Forwarded-For
+app.set('trust proxy', 1)
+
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
