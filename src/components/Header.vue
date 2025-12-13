@@ -154,7 +154,7 @@ onUnmounted(() => {
 /* Define Custom Font */
 @font-face {
   font-family: 'FZXZTFW';
-  src: url('/FZXZTFW.TTF') format('truetype');
+  src: url('/FZXZTFW_minified.woff2') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
