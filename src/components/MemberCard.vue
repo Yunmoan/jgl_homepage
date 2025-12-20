@@ -1,20 +1,8 @@
 <template>
-  <component 
-    :is="member.link ? 'a' : 'div'" 
-    :href="member.link || null" 
-    :target="member.link ? '_blank' : null"
-    :rel="member.link ? 'noopener noreferrer' : null" 
-    class="member-card"
-    :class="{ 'is-link': !!member.link }"
-  >
-    <img 
-      :src="member.logo" 
-      :alt="member.name" 
-      class="member-logo" 
-      @error="handleImageError"
-      loading="lazy"
-      decoding="async"
-    >
+  <component :is="member.link ? 'a' : 'div'" :href="member.link || null" :target="member.link ? '_blank' : null"
+    :rel="member.link ? 'noopener noreferrer' : null" class="member-card" :class="{ 'is-link': !!member.link }">
+    <img :src="member.logo" :alt="member.name" class="member-logo" @error="handleImageError" loading="lazy"
+      decoding="async">
     <span class="member-name">{{ member.name }}</span>
   </component>
 </template>
@@ -58,9 +46,10 @@ const handleImageError = (event: Event) => {
   min-height: 180px;
   text-decoration: none;
   color: inherit;
-  /* Optimize rendering */
+  /* Optimize rendering: 避免 paint 裁剪阴影/圆角 */
   will-change: auto;
-  contain: content;
+  contain: layout style;
+  overflow: visible;
 }
 
 .member-card.is-link {
@@ -69,7 +58,7 @@ const handleImageError = (event: Event) => {
 
 .member-card:hover {
   box-shadow: 0 8px 10px rgba(0, 0, 0, 0.5);
-  transform: translateY(-2px);
+  /* transform: translateY(-2px); */
 }
 
 .member-logo {
@@ -127,4 +116,3 @@ const handleImageError = (event: Event) => {
   }
 }
 </style>
-

@@ -1,21 +1,27 @@
 <template>
   <header class="site-header">
+    <SiteAnnouncements />
     <div class="container">
       <div class="logo">
         <router-link to="/home">
-          <img src="/logo2.webp" alt="河北东方高校联合 Logo" class="logo-img">
+          <img src="/logo2.webp" alt="河北东方高校联合 Logo" class="logo-img" />
           <div class="logo-text-wrapper">
             <span class="logo-text">河北东方高校联合会</span>
             <span class="logo-subtitle">HEBEI COLLEGES AND UNIVERSITIES TOUHOU CLUB UNION</span>
           </div>
         </router-link>
       </div>
+
       <nav class="main-nav">
         <router-link v-for="item in navItems" :key="item.to" :to="item.to"
           :class="{ active: activeSection === item.to }">
-          <div class="nav-content"><span>{{ item.text }}</span><span class="en">{{ item.en }}</span></div>
+          <div class="nav-content">
+            <span>{{ item.text }}</span>
+            <span class="en">{{ item.en }}</span>
+          </div>
         </router-link>
       </nav>
+
       <button class="menu-toggle" @click="toggleMenu" aria-label="Toggle menu" :class="{ 'is-open': isMenuOpen }"
         aria-controls="mobile-nav-container" :aria-expanded="isMenuOpen">
         <span class="bar"></span>
@@ -23,9 +29,13 @@
         <span class="bar"></span>
       </button>
     </div>
+  </header>
 
-    <nav id="mobile-nav-container" class="mobile-nav" :class="{ 'is-open': isMenuOpen }">
-      <div class="mobile-nav-header">
+
+  <!-- Mobile Drawer Overlay -->
+  <nav id="mobile-nav-container" class="mobile-nav" :class="{ 'is-open': isMenuOpen }" @click.self="closeMenu">
+    <div class="mobile-sheet" @click.stop>
+      <div class="mobile-sheet-header">
         <div class="logo">
           <router-link to="/" @click="closeMenu">
             <div class="logo-text-wrapper">
@@ -34,123 +44,125 @@
             </div>
           </router-link>
         </div>
+        <button class="mobile-close" @click="closeMenu" aria-label="关闭菜单">×</button>
       </div>
-      <div class="mobile-nav-links">
-        <router-link v-for="item in navItems" :key="item.to" :to="item.to" @click="closeMenu"
-          :class="{ active: activeSection === item.to }">
-          <span>{{ item.text }}</span><span class="en">{{ item.en }}</span>
-        </router-link>
+
+      <div class="mobile-sheet-body">
+        <div class="mobile-nav-links">
+          <router-link v-for="item in navItems" :key="item.to" :to="item.to" @click="closeMenu"
+            :class="{ active: activeSection === item.to }">
+            <span class="cn">{{ item.text }}</span>
+            <span class="en">{{ item.en }}</span>
+          </router-link>
+        </div>
       </div>
-    </nav>
-  </header>
+
+      <div class="mobile-safe-area"></div>
+    </div>
+  </nav>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import { useRouter, useRoute, type RouteLocationNormalized } from 'vue-router';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useRouter, useRoute, type RouteLocationNormalized } from 'vue-router'
+import SiteAnnouncements from './SiteAnnouncements.vue'
 
 const navItems = ref([
   { to: '/home#home', text: '首页', en: 'HOME' },
   { to: '/home#about', text: '关于', en: 'ABOUT' },
   { to: '/home#works', text: '制品', en: 'WORKS' },
-  { to: '/home#history', text: '高联足迹', en: 'HISTORY' },
   { to: '/home#news', text: '新闻', en: 'NEWS' },
+  { to: '/home#history', text: '高联足迹', en: 'HISTORY' },
   { to: '/home#members', text: '成员社团', en: 'MEMBERS' },
   { to: '/fames', text: '名人堂', en: 'FAMES' },
-]);
+])
 
-const isMenuOpen = ref(false);
-const isObserverActive = ref(true);
-const activeSection = ref('/home#home');
-const router = useRouter();
-const route = useRoute();
-let observer: IntersectionObserver | null = null;
-let unregisterGuard: () => void;
+const isMenuOpen = ref(false)
+const isObserverActive = ref(true)
+const activeSection = ref('/home#home')
+const router = useRouter()
+const route = useRoute()
+let observer: IntersectionObserver | null = null
+let unregisterGuard: () => void
 
 const toggleMenu = () => {
-  isMenuOpen.value = !isMenuOpen.value;
-};
+  isMenuOpen.value = !isMenuOpen.value
+}
 
 const closeMenu = () => {
-  isMenuOpen.value = false;
-};
+  isMenuOpen.value = false
+}
+
+// 锁定滚动
+watch(isMenuOpen, (open) => {
+  if (open) {
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.documentElement.style.overflow = ''
+    document.body.style.overflow = ''
+  }
+})
 
 const setupObserver = () => {
-  if (observer) {
-    observer.disconnect();
-  }
+  if (observer) observer.disconnect()
 
   observer = new IntersectionObserver(
     (entries) => {
-      if (!isObserverActive.value) return;
+      if (!isObserverActive.value) return
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          activeSection.value = `/home#${entry.target.id}`;
+          activeSection.value = `/home#${(entry.target as HTMLElement).id}`
         }
-      });
+      })
     },
-    {
-      rootMargin: '-50% 0px -50% 0px',
-    }
-  );
+    { rootMargin: '-50% 0px -50% 0px' },
+  )
 
   setTimeout(() => {
     document.querySelectorAll('main section[id]').forEach((section) => {
-      if (observer) observer.observe(section);
-    });
-  }, 100);
-};
+      if (observer) observer.observe(section)
+    })
+  }, 100)
+}
 
 const handleRouteChange = (to: RouteLocationNormalized, from?: RouteLocationNormalized) => {
   if (to.path === '/home') {
-    // If navigating to a hashed section from another page (e.g., /fames -> /home#history)
     if (to.hash && from && from.path !== '/home') {
-      isObserverActive.value = false; // Deactivate observer to prevent override
-      activeSection.value = `/home${to.hash}`;
-
-      // Re-enable the observer after the scroll has likely finished and on the next tick
+      isObserverActive.value = false
+      activeSection.value = `/home${to.hash}`
       nextTick(() => {
         setTimeout(() => {
-          isObserverActive.value = true;
-        }, 500); // A delay to allow smooth scrolling to finish
-      });
+          isObserverActive.value = true
+        }, 500)
+      })
     }
-    setupObserver();
+    setupObserver()
   } else {
-    // If navigating away from the home page
     if (observer) {
-      observer.disconnect();
-      observer = null;
+      observer.disconnect()
+      observer = null
     }
-    activeSection.value = to.path; // Set active path for other pages
+    activeSection.value = to.path
   }
-};
+}
 
 onMounted(() => {
-  // Run on initial load
-  handleRouteChange(route, undefined);
-
-  // Register the navigation guard
+  handleRouteChange(route, undefined)
   unregisterGuard = router.afterEach((to, from) => {
-    handleRouteChange(to, from);
-  });
-});
+    handleRouteChange(to, from)
+  })
+})
 
 onUnmounted(() => {
-  // Clean up the guard and observer when the component is destroyed
-  if (unregisterGuard) {
-    unregisterGuard();
-  }
-  if (observer) {
-    observer.disconnect();
-  }
-});
-
+  if (unregisterGuard) unregisterGuard()
+  if (observer) observer.disconnect()
+  document.documentElement.style.overflow = ''
+  document.body.style.overflow = ''
+})
 </script>
 
 <style scoped>
-/* ... [Existing styles remain the same] ... */
-
 /* Define Custom Font */
 @font-face {
   font-family: 'FZXZTFW';
@@ -216,11 +228,9 @@ onUnmounted(() => {
   margin-top: 0px;
 }
 
-
 .main-nav {
   display: flex;
   align-items: stretch;
-  /* Make items same height */
   height: 3.5rem;
 }
 
@@ -264,7 +274,6 @@ onUnmounted(() => {
 
 .main-nav a.active {
   background-color: rgba(231, 163, 62, 0.8);
-  /* Gold color for active */
   font-weight: bold;
   z-index: 3;
 }
@@ -300,111 +309,112 @@ onUnmounted(() => {
   transform: translateY(-8px) rotate(-45deg);
 }
 
+/* Mobile Drawer Overlay */
 .mobile-nav {
   display: flex;
-  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  padding: 1rem;
-  padding-left: 1rem;
-  background-color: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transform: translateX(100%);
-  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), visibility 0.4s;
-  z-index: 1000;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
   visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  z-index: 1100;
 }
 
 .mobile-nav.is-open {
-  transform: translateX(0);
+  opacity: 1;
   visibility: visible;
 }
 
-.mobile-nav-header {
+.mobile-sheet {
+  width: 86vw;
+  max-width: 420px;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(.2, .8, .2, 1);
+}
+
+.mobile-nav.is-open .mobile-sheet {
+  transform: translateX(0);
+}
+
+.mobile-sheet-header {
+  display: flex;
   align-items: center;
-  width: 100%;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  position: sticky;
+  top: 0;
+  background: transparent;
+  z-index: 1;
 }
 
-.mobile-nav .logo .logo-text {
-  font-size: 1.2rem;
+.mobile-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.mobile-nav .logo .logo-subtitle {
-  display: block;
-  font-size: 0.5rem;
+.mobile-sheet-body {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 0;
+}
 
+.mobile-safe-area {
+  height: env(safe-area-inset-bottom, 0);
 }
 
 .mobile-nav-links {
-  margin-top: 2rem;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  background-color: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
-  border-radius: 8px;
-  padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  opacity: 0;
-  transform: translateX(50%);
-  transition: transform 0.3s ease;
-  transition-delay: 0s;
 }
 
-.mobile-nav a {
+.mobile-nav-links a {
   color: #d8e3e7;
   text-decoration: none;
-  padding: 1rem 0;
-  position: relative;
   display: flex;
   flex-direction: column;
-  transition: color 0.3s;
+  gap: 4px;
+  padding: 14px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
-.mobile-nav a span {
-  font-size: 1.5rem;
-  font-weight: 500;
+.mobile-nav-links a:last-child {
+  border-bottom: none;
 }
 
-.mobile-nav a .en {
+.mobile-nav-links a .en {
+  font-family: 'Times New Roman', Times, serif;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: rgba(216, 227, 231, 0.5);
-  margin-top: 0.25rem;
 }
 
-.mobile-nav a:hover {
+.mobile-nav-links a.active,
+.mobile-nav-links a:hover {
   color: #fff;
-}
-
-.mobile-nav a.active {
-  color: #fff;
-  font-weight: bold;
-}
-
-.mobile-nav a.active::before {
-  content: '';
-  position: absolute;
-  left: -1rem;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background-color: #e7a33e;
-  border-radius: 2px;
-}
-
-.mobile-nav.is-open .mobile-nav-links {
-  opacity: 1;
-  transform: translateX(0);
-  transition-delay: 0.1s;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 @media (max-width: 1024px) {

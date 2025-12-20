@@ -13,7 +13,8 @@
       <el-table-column label="操作" width="200">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-popconfirm title="确定要删除这个事件吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(scope.row.id)">
+          <el-popconfirm title="确定要删除这个事件吗？" confirm-button-text="删除" cancel-button-text="取消"
+            @confirm="handleDelete(scope.row.id)">
             <template #reference>
               <el-button size="small" type="danger">删除</el-button>
             </template>
@@ -31,8 +32,9 @@
           <el-input v-model="form.date" />
         </el-form-item>
         <el-form-item label="描述">
-          <v-md-editor v-model="form.description" height="300px" :on-upload-img="handleEditorUpload"></v-md-editor>
-          <div style="margin-top: 6px; color: var(--muted-text); font-size: 12px;">支持 Ctrl+V 粘贴图片或从工具栏上传，图片将自动上传并插入</div>
+          <el-input v-model="form.description" placeholder="请输入描述" />
+          <!-- <v-md-editor v-model="form.description" height="300px" :on-upload-img="handleEditorUpload"></v-md-editor>
+          <div style="margin-top: 6px; color: var(--muted-text); font-size: 12px;">支持 Ctrl+V 粘贴图片或从工具栏上传，图片将自动上传并插入</div> -->
         </el-form-item>
         <el-form-item label="图片">
           <el-upload class="image-uploader" action="/api/upload?type=pictures" name="image" :headers="uploadHeaders"

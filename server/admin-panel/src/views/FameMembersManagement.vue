@@ -48,8 +48,9 @@
           <el-input v-model="form.name" placeholder="请输入名称" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
-          <v-md-editor v-model="form.description" height="240px" :on-upload-img="handleEditorUpload" />
-          <div class="muted" style="margin-top: 6px;">支持 Ctrl+V 粘贴图片或从工具栏上传，图片将自动上传并插入</div>
+          <el-input v-model="form.description" placeholder="请输入描述" />
+          <!-- <v-md-editor v-model="form." height="240px" :on-upload-img="handleEditorUpload" /> -->
+          <!-- <div class="muted" style="margin-top: 6px;">支持 Ctrl+V 粘贴图片或从工具栏上传，图片将自动上传并插入</div> -->
         </el-form-item>
         <el-form-item label="图片">
           <el-radio-group v-model="imageInputMode" size="small" style="margin-bottom: 8px;">

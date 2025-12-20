@@ -10,10 +10,22 @@
       <el-table-column prop="title" label="标题" />
       <el-table-column prop="author" label="作者" width="150" />
       <el-table-column prop="date" label="日期" width="200" />
-      <el-table-column label="操作" width="200">
+      <el-table-column prop="submitter" label="提交人" width="160" />
+      <el-table-column prop="status" label="状态" width="140">
+        <template #default="scope">
+          <el-tag :type="statusType(scope.row.status)">{{ scope.row.status || '—' }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="320">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
           <el-button size="small" type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
+          <template v-if="isAdmin">
+            <el-button size="small" type="success" @click="handleSetStatus(scope.row, 'approved')"
+              :disabled="scope.row.status === 'approved'">通过</el-button>
+            <el-button size="small" type="warning" @click="handleSetStatus(scope.row, 'rejected')"
+              :disabled="scope.row.status === 'rejected'">驳回</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -72,6 +84,19 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import type { UploadProps } from 'element-plus';
 
+function parseJwtRole(): string | null {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return payload?.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 interface NewsArticle {
   id: number;
   title: string;
@@ -80,12 +105,16 @@ interface NewsArticle {
   image: string;
   summary: string;
   content: string;
+  submitter?: string;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 const tableData = ref<NewsArticle[]>([]);
 const loading = ref(true);
 const dialogVisible = ref(false);
 const isEditMode = ref(false);
+
+const isAdmin = computed(() => parseJwtRole() === 'admin');
 
 const editorRef = ref();
 
@@ -119,16 +148,29 @@ const fetchNews = async () => {
   }
 };
 
+const me = ref<{ id: number; username: string; role: string; nickname?: string } | null>(null);
+const fetchMe = async () => {
+  try {
+    const res = await apiClient.get('/users/me');
+    me.value = res.data;
+  } catch (e) {
+    // 忽略未登录等异常（理论上管理台已登录）
+    me.value = null;
+  }
+};
+
 onMounted(() => {
+  fetchMe();
   fetchNews();
 });
 
 const resetForm = () => {
+  const authorDefault = me.value?.nickname || me.value?.username || '';
   Object.assign(form, {
     id: undefined,
     title: '',
     date: new Date().toISOString().slice(0, 19).replace('T', ' '),
-    author: '',
+    author: authorDefault,
     image: '',
     summary: '',
     content: '',
@@ -324,6 +366,23 @@ const handleDelete = async (id: number) => {
       ElMessage.error('删除失败');
       console.error('Failed to delete news:', error);
     }
+  }
+};
+
+const statusType = (s?: string) => {
+  if (s === 'approved') return 'success';
+  if (s === 'rejected') return 'danger';
+  if (s === 'pending') return 'warning';
+  return '';
+};
+
+const handleSetStatus = async (row: NewsArticle, status: 'approved' | 'rejected' | 'pending') => {
+  try {
+    await apiClient.put(`/news/${row.id}/status`, { status });
+    row.status = status;
+    ElMessage.success('状态已更新');
+  } catch (e) {
+    ElMessage.error('状态更新失败');
   }
 };
 </script>

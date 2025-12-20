@@ -1,18 +1,20 @@
 <template>
-  <div class="news-section-container">
-    <h2 class="section-title">新闻速递</h2>
-    <transition name="list-fade" mode="out-in">
-      <ul class="news-list" :key="currentPage">
-        <li v-for="article in paginatedNews" :key="article.id" @click="selectArticle(article)" class="news-list-item">
-          <span class="news-date">{{ formatDate(article.date) }}</span>
-          <span class="news-title">{{ article.title }}</span>
-        </li>
-      </ul>
-    </transition>
-    <div v-if="totalPages > 1" class="pagination">
-      <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
-      <span>第 {{ currentPage }} 页 / 共 {{ totalPages }} 页</span>
-      <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+  <div class="news-section-wrapper">
+    <div class="news-section-container">
+      <h2 class="section-title">新闻速递</h2>
+      <transition name="list-fade" mode="out-in">
+        <ul class="news-list" :key="currentPage">
+          <li v-for="article in paginatedNews" :key="article.id" @click="selectArticle(article)" class="news-list-item">
+            <span class="news-date">{{ formatDate(article.date) }}</span>
+            <span class="news-title">{{ article.title }}</span>
+          </li>
+        </ul>
+      </transition>
+      <div v-if="totalPages > 1" class="pagination">
+        <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+        <span>第 {{ currentPage }} 页 / 共 {{ totalPages }} 页</span>
+        <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
+      </div>
     </div>
   </div>
 </template>
@@ -94,6 +96,10 @@ function prevPage() {
 </script>
 
 <style scoped>
+.news-section-wrapper {
+  background: linear-gradient(#235b72, #263d6a);
+}
+
 .news-section-container {
   max-width: 960px;
   margin: 0 auto;

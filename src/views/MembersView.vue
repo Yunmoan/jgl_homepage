@@ -132,14 +132,14 @@ onUnmounted(() => {
 
 <style scoped>
 .members-view {
-  padding: 120px 0 4rem;
+  padding: 120px 10 4rem;
   background: linear-gradient(#263d6a, #235b72);
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 2rem 1rem;
   text-align: center;
 }
 
@@ -158,7 +158,9 @@ onUnmounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1.5rem;
   /* Optimize rendering performance */
-  contain: layout style paint;
+  contain: layout style;
+  overflow: visible;
+  padding: 50px 8px;
 }
 
 .observer-target {

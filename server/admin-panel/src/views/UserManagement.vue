@@ -8,6 +8,7 @@
     <el-table :data="tableData" v-loading="loading" style="width: 100%">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="username" label="用户名" />
+      <el-table-column prop="nickname" label="昵称" />
       <el-table-column prop="role" label="角色">
         <template #default="scope">
           <el-tag>{{ scope.row.role }}</el-tag>
@@ -28,6 +29,9 @@
         <el-form-item label="用户名">
           <el-input v-model="form.username" :disabled="isEditMode" />
         </el-form-item>
+        <el-form-item label="昵称">
+          <el-input v-model="form.nickname" placeholder="用于展示与默认作者名，可留空为用户名" />
+        </el-form-item>
         <el-form-item v-if="!isEditMode" label="密码">
           <el-input v-model="form.password" type="password" show-password />
         </el-form-item>
@@ -36,6 +40,7 @@
             <el-option label="Admin" value="admin" />
             <el-option label="Editor" value="editor" />
             <el-option label="Viewer" value="viewer" />
+            <el-option label="Member" value="member" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -77,7 +82,8 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 interface User {
   id: number;
   username: string;
-  role: 'admin' | 'editor' | 'viewer';
+  role: 'admin' | 'editor' | 'viewer' | 'member';
+  nickname?: string;
   created_at: string;
 }
 
@@ -201,4 +207,3 @@ const handleDelete = async (id: number) => {
   margin-bottom: 20px;
 }
 </style>
-

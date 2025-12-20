@@ -19,17 +19,17 @@
     </section>
 
     <div class="main-sections">
-      <section id="about" class="fade-in-section">
+      <section id="about">
         <AboutView />
       </section>
-      <section id="works" class="fade-in-section">
+      <section id="works">
         <WorksView />
+      </section>
+      <section id="news">
+        <NewsSection @select-article="onArticleSelected" />
       </section>
       <section id="history" class="fade-in-section">
         <PictureView />
-      </section>
-      <section id="news" class="fade-in-section">
-        <NewsSection @select-article="onArticleSelected" />
       </section>
       <section id="messages" class="fade-in-section">
         <MessagesView />
@@ -68,7 +68,7 @@ onMounted(() => {
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
+          (entry.target as HTMLElement).classList.add('is-visible');
           observer.unobserve(entry.target); // Animate only once
         }
       });

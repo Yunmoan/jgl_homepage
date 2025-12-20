@@ -1,21 +1,22 @@
 <template>
-  <div class="works-view page-wrapper">
+  <div class="works-page page-wrapper">
     <div class="container">
       <h2 class="page-title">社团制品 / WORKS</h2>
+      <span>此页面展示了各大高校同好社提交到高联官网的社团制品，此处用作推广作用。</span>
 
-      <div class="tags-bar" v-if="true">
-        <button class="tag" :class="{ active: showFeaturedOnly }" @click="selectFeatured()">精选</button>
-        <button class="tag" :class="{ active: !showFeaturedOnly && selectedClub === 'all' }"
-          @click="selectClub('all')">全部</button>
-        <button v-for="c in clubs" :key="c" class="tag" :class="{ active: !showFeaturedOnly && selectedClub === c }"
-          @click="selectClub(c)">{{ c }}</button>
-        <router-link class="view-all"
-          :to="selectedClub === 'all' ? '/works' : `/works?club=${encodeURIComponent(selectedClub)}`">查看全部制品
-          →</router-link>
+      <div class="toolbar">
+
+        <div class="tags-bar" v-if="clubs.length">
+          <button class="tag" :class="{ active: selectedClub === 'all' }" @click="selectClub('all')">全部</button>
+          <button v-for="c in clubs" :key="c" class="tag" :class="{ active: selectedClub === c }"
+            @click="selectClub(c)">{{ c }}</button>
+        </div>
+        <div class="right-actions">
+          <router-link class="back-home" to="/home#works">返回首页区块</router-link>
+        </div>
       </div>
 
       <div class="grid-transition-wrap">
-        <!-- 采用容器交叠式淡入淡出，减少抖动 -->
         <transition name="fade">
           <div :key="transitionKey" class="works-grid" :class="{ 'fixed-height': totalPages > 1 }">
             <a v-for="work in paginatedWorks" :key="work.id" :href="work.link" target="_blank" rel="noopener noreferrer"
@@ -42,13 +43,15 @@
         <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
         <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
       </div>
-      <p class="notice" v-else>更多作品正在整理中，敬请期待！</p>
+
+      <p v-if="!loading && filteredWorks.length === 0" class="notice">暂无相关作品。</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 interface Work {
   id: number;
@@ -60,19 +63,49 @@ interface Work {
   featured?: number; // 0/1
 }
 
+const route = useRoute();
+const router = useRouter();
 const works = ref<Work[]>([]);
 const selectedClub = ref<'all' | string>('all');
-const showFeaturedOnly = ref(false);
+const loading = ref(false);
 
-onMounted(async () => {
+const fetchWorks = async () => {
+  loading.value = true;
   try {
+    // 始终获取全量数据，在前端做筛选，避免切换标签后标签列表被“过滤”而消失
     const response = await fetch('/api/works');
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
+    if (!response.ok) throw new Error('Failed to fetch works');
     works.value = await response.json();
-  } catch (error) {
-    console.error('Failed to fetch works data:', error);
+  } catch (err) {
+    console.error(err);
+    works.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Initialize from query
+onMounted(() => {
+  const qClub = (route.query.club as string) || 'all';
+  selectedClub.value = qClub;
+  fetchWorks();
+});
+
+// Keep query in sync when user selects
+const selectClub = (club: 'all' | string) => {
+  selectedClub.value = club;
+  currentPage.value = 1;
+  router.replace({ query: club === 'all' ? {} : { club } });
+  fetchWorks();
+};
+
+// Also react when query changes externally
+watch(() => route.query.club, (newVal) => {
+  const club = (newVal as string) || 'all';
+  if (club !== selectedClub.value) {
+    selectedClub.value = club;
+    currentPage.value = 1;
+    fetchWorks();
   }
 });
 
@@ -83,26 +116,23 @@ const clubs = computed(() => {
 });
 
 const filteredWorks = computed(() => {
-  if (showFeaturedOnly.value) {
-    return works.value.filter((w) => Number((w as any).featured) === 1);
-  }
+  // When using API filter, works already filtered; but keep guard if backend returns all
   if (selectedClub.value === 'all') return works.value;
   return works.value.filter((w) => w.club === selectedClub.value);
 });
 
 const currentPage = ref(1);
-const itemsPerPage = ref(8); // Default for desktop
+const itemsPerPage = ref(12); // Page view shows more
 
 const updateItemsPerPage = (mql: MediaQueryList | MediaQueryListEvent) => {
-  itemsPerPage.value = mql.matches ? 4 : 8; // Mobile : Desktop
+  itemsPerPage.value = mql.matches ? 6 : 12; // Mobile : Desktop
   currentPage.value = 1;
 };
 
 onMounted(() => {
   const mediaQueryList = window.matchMedia('(max-width: 768px)');
-  updateItemsPerPage(mediaQueryList); // Initial check
+  updateItemsPerPage(mediaQueryList);
   mediaQueryList.addEventListener('change', updateItemsPerPage);
-
   onUnmounted(() => {
     mediaQueryList.removeEventListener('change', updateItemsPerPage);
   });
@@ -119,33 +149,20 @@ const paginatedWorks = computed(() => {
 });
 
 const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
+  if (currentPage.value < totalPages.value) currentPage.value++;
 };
-
 const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
+  if (currentPage.value > 1) currentPage.value--;
 };
 
-const selectClub = (club: 'all' | string) => {
-  showFeaturedOnly.value = false;
-  selectedClub.value = club;
-  currentPage.value = 1;
-};
+// 用于容器级过渡的 key，避免逐项重排动画
+const transitionKey = computed(() => `${selectedClub.value}-${currentPage.value}`);
 
-const selectFeatured = () => {
-  showFeaturedOnly.value = true;
-  currentPage.value = 1;
-};
-
-// 用于过渡的唯一 key，避免逐项动画导致重排
-const transitionKey = computed(() => `${showFeaturedOnly.value ? 'f' : 'c'}-${selectedClub.value}-${currentPage.value}`);
-
-// 图片占位处理：仅在加载失败时使用占位图
+// 图片占位处理（找不到图片时使用 @public/placeholder.svg）
 const PLACEHOLDER = '/placeholder.svg';
+const getImgSrc = (url?: string) => {
+  return url && url.trim() ? url : PLACEHOLDER;
+};
 const onImgError = (e: Event) => {
   const img = e.target as HTMLImageElement;
   if (!img) return;
@@ -158,7 +175,7 @@ const onImgError = (e: Event) => {
 <style scoped>
 .page-wrapper {
   padding: 120px 0 4rem;
-  background: linear-gradient(#536a9b, #235b72);
+  background: linear-gradient(#235b72, #1e293b);
 }
 
 .page-title {
@@ -171,12 +188,18 @@ const onImgError = (e: Event) => {
   padding-bottom: 1rem;
 }
 
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+
 .tags-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-  margin: 1rem 0 1.5rem;
 }
 
 .tag {
@@ -195,11 +218,13 @@ const onImgError = (e: Event) => {
   font-weight: 600;
 }
 
-.view-all {
+.right-actions {
   margin-left: auto;
-  text-decoration: none;
+}
+
+.back-home {
   color: #ffdba6;
-  font-size: 0.95rem;
+  text-decoration: none;
 }
 
 .grid-transition-wrap {
@@ -208,22 +233,22 @@ const onImgError = (e: Event) => {
 
 .works-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-bottom: 3rem;
-  padding: 30px 8px;
-  /* 避免 paint 裁剪导致上下阴影/圆角被“截断” */
-  /* contain: layout style; */
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  padding: 30px 0px;
+  /* 避免 paint 裁剪导致圆角/阴影“截断” */
+  contain: layout style;
   overflow: visible;
   content-visibility: auto;
   contain-intrinsic-size: 720px;
 }
 
 .works-grid.fixed-height {
-  min-height: calc(330px * 2 + 2rem);
+  min-height: calc(330px * 2 + 1.25rem);
 }
 
-/* 容器交叠淡入淡出，避免等待导致的空白 */
+/* 容器交叠淡入淡出，减少重排抖动 */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.15s ease;
@@ -235,7 +260,6 @@ const onImgError = (e: Event) => {
   opacity: 0;
 }
 
-/* 让离场容器脱离文档流进行交叠，减少重排 */
 .fade-leave-active {
   position: absolute;
   inset: 0;
@@ -250,13 +274,13 @@ const onImgError = (e: Event) => {
   /* 将边框与背景移到外层，避免双重圆角造成边界“断裂” */
   background-color: rgba(26, 75, 139, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: transform 0.25s, box-shadow 0.25s;
+  transition: transform .25s, box-shadow .25s;
   will-change: transform;
 }
 
 .work-item-link:hover {
   /* transform: translateY(-5px); */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .3);
 }
 
 .work-item {
@@ -322,11 +346,19 @@ const onImgError = (e: Event) => {
 }
 
 .work-description {
-  font-size: 0.9rem;
+  font-size: .9rem;
   color: #94a3b8;
   padding: 0 1rem 1rem;
   margin: 0;
   line-height: 1.5;
+}
+
+/* 旧样式保留兼容但不再使用 */
+.work-club {
+  font-size: .85rem;
+  color: #cbd5e1;
+  padding: 0 1rem 1rem;
+  margin: 0;
 }
 
 .pagination-controls {
@@ -344,7 +376,7 @@ const onImgError = (e: Event) => {
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color .3s;
 }
 
 .pagination-controls button:hover:not(:disabled) {
@@ -354,12 +386,7 @@ const onImgError = (e: Event) => {
 .pagination-controls button:disabled {
   background-color: #3a5a7e;
   cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.notice {
-  text-align: center;
-  color: #94a3b8;
+  opacity: .6;
 }
 
 @media (max-width: 768px) {
@@ -370,25 +397,6 @@ const onImgError = (e: Event) => {
   .page-title {
     font-size: 2rem;
     margin-bottom: 0.75rem;
-  }
-
-  .works-grid {
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  }
-
-  .works-grid.fixed-height {
-    min-height: calc(330px * 2 + 1rem);
-  }
-
-  .pagination-controls button {
-    padding: 0.75rem 1.25rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .works-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 

@@ -1,27 +1,41 @@
 import { Router } from 'express'
 import pool from '../db'
 import cache from '../cache'
-import { protect, authorize } from '../middleware/auth'
+import { protect, authorize, optionalAuth } from '../middleware/auth'
 
 const router = Router()
 
 // @route   GET /api/news
-// @desc    Get all news articles
-// @access  Public
-router.get('/', async (req, res) => {
-  const cacheKey = 'news_all'
-  const cachedNews = cache.get(cacheKey)
-
-  if (cachedNews) {
-    // console.log('Serving news from cache');
-    return res.json(cachedNews)
-  }
-
+// @desc    Get news articles (token present & non-admin: only own)
+// @access  Public (token optional)
+router.get('/', optionalAuth as any, async (req: any, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM news ORDER BY date DESC')
-    cache.set(cacheKey, rows)
-    // console.log('Serving news from DB and caching');
-    res.json(rows)
+    const user = req.user
+    if (user && user.role !== 'admin') {
+      const [rows] = await pool.query(
+        'SELECT n.*, COALESCE(u.nickname,u.username) AS submitter FROM news n LEFT JOIN users u ON u.id = n.user_id WHERE n.user_id = ? ORDER BY n.date DESC',
+        [user.id],
+      )
+      return res.json(rows)
+    }
+
+    // Public or admin
+    if (!user) {
+      const cacheKey = 'news_public_approved'
+      const cachedNews = cache.get(cacheKey)
+      if (cachedNews) return res.json(cachedNews)
+      const [rows] = await pool.query(
+        "SELECT n.*, u.username AS submitter FROM news n LEFT JOIN users u ON u.id = n.user_id WHERE n.status = 'approved' ORDER BY n.date DESC",
+      )
+      cache.set(cacheKey, rows)
+      return res.json(rows)
+    } else {
+      // admin with token, no cache
+      const [rows] = await pool.query(
+        'SELECT n.*, COALESCE(u.nickname,u.username) AS submitter FROM news n LEFT JOIN users u ON u.id = n.user_id ORDER BY n.date DESC',
+      )
+      return res.json(rows)
+    }
   } catch (error) {
     console.error('Error fetching news:', error)
     res.status(500).json({ error: 'Internal Server Error' })
@@ -30,8 +44,8 @@ router.get('/', async (req, res) => {
 
 // @route   POST /api/news
 // @desc    Create a news article
-// @access  Private (Admin, Editor)
-router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
+// @access  Private (Admin, Editor, Member)
+router.post('/', protect, authorize('admin', 'editor', 'member'), async (req: any, res) => {
   const { title, date, author, image, summary, content } = req.body
 
   if (!title || !content || !date) {
@@ -54,14 +68,19 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
   const dateNormalized = toMysqlDatetime(date)
 
   try {
+    const userId = req.user?.id ?? null
+    const role = req.user?.role
+    const status = role === 'admin' ? 'approved' : 'pending'
     const [result] = await pool.query(
-      'INSERT INTO news (title, date, author, image, summary, content) VALUES (?, ?, ?, ?, ?, ?)',
-      [title, dateNormalized, author, image, summary, content],
+      'INSERT INTO news (title, date, author, image, summary, content, status, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, dateNormalized, author, image, summary, content, status, userId],
     )
-    cache.del('news_all')
-    res
-      .status(201)
-      .json({ message: 'News article created successfully', insertId: (result as any).insertId })
+    cache.del('news_public_approved')
+    res.status(201).json({
+      message: 'News article created successfully',
+      insertId: (result as any).insertId,
+      status,
+    })
   } catch (error) {
     console.error('Error creating news article:', error)
     res.status(500).json({ error: 'Internal Server Error' })
@@ -71,7 +90,7 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
 // @route   PUT /api/news/:id
 // @desc    Update a news article
 // @access  Private (Admin, Editor)
-router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
+router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: any, res) => {
   const { id } = req.params
   const { title, date, author, image, summary, content } = req.body
 
@@ -95,16 +114,23 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
   const dateNormalized = toMysqlDatetime(date)
 
   try {
-    const [result] = await pool.query(
-      'UPDATE news SET title = ?, date = ?, author = ?, image = ?, summary = ?, content = ? WHERE id = ?',
-      [title, dateNormalized, author, image, summary, content, id],
-    )
+    let sql =
+      'UPDATE news SET title = ?, date = ?, author = ?, image = ?, summary = ?, content = ? WHERE id = ?'
+    const params: any[] = [title, dateNormalized, author, image, summary, content, id]
 
-    if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'News article not found' })
+    // 非 admin 仅能修改自己创建的记录
+    if (req.user?.role !== 'admin') {
+      sql += ' AND user_id = ?'
+      params.push(req.user?.id)
     }
 
-    cache.del('news_all')
+    const [result] = await pool.query(sql, params)
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({ error: 'News article not found or no permission' })
+    }
+
+    cache.del('news_public_approved')
     res.json({ message: 'News article updated successfully' })
   } catch (error) {
     console.error('Error updating news article:', error)
@@ -125,10 +151,33 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
       return res.status(404).json({ error: 'News article not found' })
     }
 
-    cache.del('news_all')
+    cache.del('news_public_approved')
     res.json({ message: 'News article deleted successfully' })
   } catch (error) {
     console.error('Error deleting news article:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+// @route   PUT /api/news/:id/status
+// @desc    Approve/Reject a news article (admin only)
+// @access  Private (Admin)
+router.put('/:id/status', protect, authorize('admin'), async (req, res) => {
+  const { id } = req.params as { id: string }
+  const { status } = req.body as { status?: 'approved' | 'rejected' | 'pending' }
+  if (!status || !['approved', 'rejected', 'pending'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' })
+  }
+  try {
+    const [result] = await pool.query('UPDATE news SET status=? WHERE id = ?', [status, id])
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({ error: 'News not found' })
+    }
+    // 清理公共缓存
+    cache.del('news_public_approved')
+    res.json({ message: 'Status updated', status })
+  } catch (e) {
+    console.error('Error updating news status:', e)
     res.status(500).json({ error: 'Internal Server Error' })
   }
 })

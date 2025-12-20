@@ -26,6 +26,8 @@
 <style scoped>
 .page-wrapper {
   padding: 120px 0 4rem;
+  background: linear-gradient(#536a9b);
+
   /* 80px for header + 40px top padding */
 }
 

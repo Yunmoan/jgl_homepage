@@ -3,7 +3,7 @@
   --el-color-primary: #3a7afe;
   --el-color-success: #10b981;
   --el-color-warning: #f59e0b;
-  --el-color-danger:  #ef4444;
+  --el-color-danger: #ef4444;
 
   /* Layout */
   --app-bg: #f6f7fb;
@@ -28,24 +28,45 @@
   --muted-text: rgba(255, 255, 255, 0.55);
 }
 
-html, body, #app { height: 100%; }
+html,
+body,
+#app {
+  height: 100%;
+}
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
   background: var(--app-bg);
   color: var(--text-color);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    'Apple Color Emoji',
+    'Segoe UI Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a { color: var(--el-color-primary); text-decoration: none; }
-a:hover { opacity: 0.9; }
+a {
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+a:hover {
+  opacity: 0.9;
+}
 
 /* Global containers */
-.page-container { padding: var(--page-padding); }
+.page-container {
+  padding: var(--page-padding);
+}
 .controls {
   display: flex;
   align-items: center;
@@ -60,13 +81,26 @@ a:hover { opacity: 0.9; }
 }
 
 /* Element Plus tweaks */
-.el-card { border-radius: var(--radius-base); box-shadow: var(--shadow-card); }
-.el-dialog { border-radius: var(--radius-base); }
-.el-button { border-radius: 8px; }
+.el-card {
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-card);
+}
+.el-dialog {
+  border-radius: var(--radius-base);
+}
+.el-button {
+  border-radius: 8px;
+}
 
 /* Tables */
-.el-table { background-color: var(--card-bg); border-radius: var(--radius-base); }
-.el-table th, .el-table td { /* reduce density slightly with global size=small */ }
+.el-table {
+  background-color: var(--card-bg);
+  border-radius: var(--radius-base);
+}
+.el-table th,
+.el-table td {
+  /* reduce density slightly with global size=small */
+}
 
 /* Upload preview image */
 .image-uploader .image {
@@ -84,7 +118,9 @@ a:hover { opacity: 0.9; }
   overflow: hidden;
   transition: var(--el-transition-duration-fast);
 }
-.image-uploader .el-upload:hover { border-color: var(--el-color-primary); }
+.image-uploader .el-upload:hover {
+  border-color: var(--el-color-primary);
+}
 .el-icon.image-uploader-icon {
   font-size: 28px;
   color: #8c939d;
@@ -94,4 +130,82 @@ a:hover { opacity: 0.9; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ==============================
+   v-md-editor 暗色主题修复
+   - 修正编辑区/预览区在暗色模式下仍为浅色的问题
+   - 统一文字、边框与背景颜色
+   ============================== */
+.dark .v-md-editor {
+  --editor-bg: var(--card-bg);
+  --editor-toolbar-bg: var(--header-bg);
+  --editor-border: var(--el-border-color);
+  background: var(--editor-bg) !important;
+  color: var(--text-color) !important;
+  border-color: var(--editor-border) !important;
+}
+
+.dark .v-md-editor .v-md-editor__toolbar {
+  background: var(--editor-toolbar-bg) !important;
+  border-bottom-color: var(--editor-border) !important;
+}
+
+.dark .v-md-editor .v-md-editor__content,
+.dark .v-md-editor .v-md-editor__editor-wrapper,
+.dark .v-md-editor .v-md-editor__editor,
+.dark .v-md-editor .v-md-editor__preview,
+.dark .v-md-editor .v-md-editor__preview-wrapper {
+  background: var(--editor-bg) !important;
+}
+
+/* 文本与占位符 */
+.dark .v-md-editor .v-md-textarea-editor textarea {
+  background: transparent !important;
+  color: var(--text-color) !important;
+}
+.dark .v-md-editor .v-md-textarea-editor textarea::placeholder {
+  color: var(--muted-text) !important;
+}
+
+/* 工具栏图标与悬停 */
+.dark .v-md-editor .v-md-editor__toolbar .v-md-editor__toolbar-item {
+  color: var(--text-color) !important;
+}
+.dark .v-md-editor .v-md-editor__toolbar .v-md-editor__toolbar-item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* 分隔线/边框 */
+.dark .v-md-editor .v-md-editor__editor-wrapper,
+.dark .v-md-editor .v-md-editor__preview,
+.dark .v-md-editor .v-md-editor__toolbar {
+  border-color: var(--editor-border) !important;
+}
+
+/* 预览区 Markdown 颜色适配（vuepress 主题） */
+.dark .v-md-editor .vuepress-markdown-body {
+  color: var(--text-color) !important;
+  background: transparent !important;
+}
+.dark .v-md-editor .vuepress-markdown-body a {
+  color: var(--el-color-primary) !important;
+}
+.dark .v-md-editor .vuepress-markdown-body hr,
+.dark .v-md-editor .vuepress-markdown-body table {
+  border-color: var(--editor-border) !important;
+}
+.dark .v-md-editor .vuepress-markdown-body blockquote {
+  color: var(--text-color) !important;
+  border-left-color: var(--editor-border) !important;
+}
+
+/* 代码块/行内代码 */
+.dark .v-md-editor .vuepress-markdown-body code,
+.dark .v-md-editor .vuepress-markdown-body pre code {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--text-color) !important;
+}
+.dark .v-md-editor .vuepress-markdown-body pre {
+  background: rgba(255, 255, 255, 0.06) !important;
 }

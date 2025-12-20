@@ -9,14 +9,14 @@
       </div>
       <el-scrollbar class="sidebar-scroll">
         <el-menu :default-openeds="['content', 'system']" router :collapse="isCollapsed" :collapse-transition="false">
-          <el-sub-menu index="content">
+          <el-sub-menu index="content" v-if="showContentGroup">
             <template #title>
               <el-icon>
                 <Document />
               </el-icon>
               <span>内容管理</span>
             </template>
-            <el-menu-item index="/admin/news">
+            <el-menu-item index="/admin/news" v-if="can('admin-news')">
               <template #title>
                 <el-icon>
                   <Notification />
@@ -24,7 +24,7 @@
                 <span>新闻管理</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/members">
+            <el-menu-item index="/admin/members" v-if="can('admin-members')">
               <template #title>
                 <el-icon>
                   <User />
@@ -32,7 +32,7 @@
                 <span>成员管理</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/works">
+            <el-menu-item index="/admin/works" v-if="can('admin-works')">
               <template #title>
                 <el-icon>
                   <Tickets />
@@ -40,7 +40,7 @@
                 <span>作品管理</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/history">
+            <el-menu-item index="/admin/history" v-if="can('admin-history-events')">
               <template #title>
                 <el-icon>
                   <Clock />
@@ -48,7 +48,7 @@
                 <span>历史事件</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/fame-members">
+            <el-menu-item index="/admin/fame-members" v-if="can('admin-fame-members')">
               <template #title>
                 <el-icon>
                   <Trophy />
@@ -56,7 +56,7 @@
                 <span>名人堂</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/admin-history">
+            <el-menu-item index="/admin/admin-history" v-if="can('admin-admin-history')">
               <template #title>
                 <el-icon>
                   <OfficeBuilding />
@@ -64,7 +64,7 @@
                 <span>理事会</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/friend-links">
+            <el-menu-item index="/admin/friend-links" v-if="can('admin-friend-links')">
               <template #title>
                 <el-icon>
                   <LinkIcon />
@@ -72,7 +72,7 @@
                 <span>友情链接</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/messages">
+            <el-menu-item index="/admin/messages" v-if="can('admin-messages')">
               <template #title>
                 <el-icon>
                   <ChatDotRound />
@@ -80,15 +80,23 @@
                 <span>留言管理</span>
               </template>
             </el-menu-item>
+            <el-menu-item index="/admin/announcements" v-if="can('admin-announcements')">
+              <template #title>
+                <el-icon>
+                  <Notification />
+                </el-icon>
+                <span>公告管理</span>
+              </template>
+            </el-menu-item>
           </el-sub-menu>
-          <el-sub-menu index="system">
+          <el-sub-menu index="system" v-if="showSystemGroup">
             <template #title>
               <el-icon>
                 <Setting />
               </el-icon>
               <span>系统管理</span>
             </template>
-            <el-menu-item index="/admin/users">
+            <el-menu-item index="/admin/users" v-if="can('admin-users')">
               <template #title>
                 <el-icon>
                   <UserFilled />
@@ -120,6 +128,7 @@
             </span>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item @click="openProfile">编辑资料</el-dropdown-item>
                 <el-dropdown-item @click="openChangePwd">修改密码</el-dropdown-item>
                 <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -153,6 +162,26 @@
           </span>
         </template>
       </el-dialog>
+
+      <el-dialog v-model="profileDialogVisible" title="编辑资料" width="420px">
+        <el-form :model="profileForm" label-width="100px">
+          <el-form-item label="用户名">
+            <el-input v-model="profileForm.username" disabled />
+          </el-form-item>
+          <el-form-item label="角色">
+            <el-input v-model="profileForm.role" disabled />
+          </el-form-item>
+          <el-form-item label="昵称">
+            <el-input v-model="profileForm.nickname" placeholder="用于展示与默认作者名，可留空为用户名" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="profileDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="submitProfile">保存</el-button>
+          </span>
+        </template>
+      </el-dialog>
     </el-container>
   </el-container>
 </template>
@@ -178,6 +207,48 @@ import {
   Fold,
   Expand,
 } from '@element-plus/icons-vue'
+
+function getRole(): 'admin' | 'editor' | 'viewer' | 'member' | null {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return null
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload?.role ?? null
+  } catch {
+    return null
+  }
+}
+
+const currentRole = computed(() => getRole())
+
+const routeRoleMap: Record<string, Array<'admin' | 'editor' | 'member'>> = {
+  'admin-news': ['admin', 'editor', 'member'],
+  'admin-members': ['admin', 'editor'],
+  'admin-works': ['admin', 'editor', 'member'],
+  'admin-history-events': ['admin', 'editor'],
+  'admin-fame-members': ['admin', 'editor'],
+  'admin-admin-history': ['admin', 'editor'],
+  'admin-friend-links': ['admin', 'editor'],
+  'admin-messages': ['admin', 'editor'],
+  'admin-users': ['admin'],
+  'admin-announcements': ['admin', 'editor'],
+}
+
+const can = (name: string) => {
+  const r = currentRole.value
+  if (!r) return false
+  const roles = routeRoleMap[name]
+  return roles ? roles.includes(r as any) : false
+}
+
+const showContentGroup = computed(() => {
+  const r = currentRole.value
+  return r === 'admin' || r === 'editor' || r === 'member'
+})
+
+const showSystemGroup = computed(() => currentRole.value === 'admin')
 
 const router = useRouter()
 const route = useRoute()
@@ -245,6 +316,38 @@ const submitChangePwd = async () => {
     pwdDialogVisible.value = false
   } catch (err: any) {
     const msg = err?.response?.data?.error || '密码修改失败'
+    ElMessage.error(msg)
+  }
+}
+
+// Profile edit dialog state
+const profileDialogVisible = ref(false)
+const profileForm = reactive<{ username: string; role: string; nickname: string }>({
+  username: '',
+  role: '',
+  nickname: '',
+})
+
+const openProfile = async () => {
+  try {
+    const res = await apiClient.get('/users/me')
+    const { username, role, nickname } = res.data || {}
+    profileForm.username = username || ''
+    profileForm.role = role || ''
+    profileForm.nickname = nickname || ''
+    profileDialogVisible.value = true
+  } catch (e) {
+    ElMessage.error('获取个人资料失败')
+  }
+}
+
+const submitProfile = async () => {
+  try {
+    await apiClient.put('/users/me/profile', { nickname: profileForm.nickname || null })
+    ElMessage.success('资料已更新')
+    profileDialogVisible.value = false
+  } catch (e: any) {
+    const msg = e?.response?.data?.error || '资料更新失败'
     ElMessage.error(msg)
   }
 }

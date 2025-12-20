@@ -4,7 +4,8 @@
             <div class="controls">
                 <h1>作品管理</h1>
                 <div class="control-actions">
-                    <el-input v-model="keyword" placeholder="搜索标题/描述" clearable :prefix-icon="Search" style="width: 240px;" />
+                    <el-input v-model="keyword" placeholder="搜索标题/描述/社团标签" clearable :prefix-icon="Search"
+                        style="width: 280px;" />
                     <el-button type="primary" @click="handleCreate">添加作品</el-button>
                 </div>
             </div>
@@ -15,14 +16,24 @@
                 <el-table-column prop="description" label="描述" min-width="240" show-overflow-tooltip />
                 <el-table-column prop="imageUrl" label="图片" width="140">
                     <template #default="scope">
-                        <img v-if="scope.row.imageUrl" :src="formatImageUrl(scope.row.imageUrl)" alt="Image" style="width: 100px; height: 64px; object-fit: cover; border-radius: 6px;" />
+                        <img v-if="scope.row.imageUrl" :src="formatImageUrl(scope.row.imageUrl)" alt="Image"
+                            style="width: 100px; height: 64px; object-fit: cover; border-radius: 6px;" />
                     </template>
                 </el-table-column>
                 <el-table-column prop="link" label="链接" min-width="180" show-overflow-tooltip />
-                <el-table-column label="操作" width="200" fixed="right">
+                <el-table-column prop="club" label="社团标签" min-width="140" />
+                <el-table-column prop="submitter" label="提交人" width="140" />
+                <el-table-column prop="featured" label="精选" width="120">
+                    <template #default="scope">
+                        <el-switch :model-value="Boolean(scope.row.featured)" :disabled="!isAdmin" active-text="是"
+                            inactive-text="否" @change="(val: boolean) => handleToggleFeatured(scope.row, val)" />
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="220" fixed="right">
                     <template #default="scope">
                         <el-button size="small" :icon="Edit" @click="handleEdit(scope.row)">编辑</el-button>
-                        <el-popconfirm title="确定要删除这个作品吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(scope.row.id)">
+                        <el-popconfirm title="确定要删除这个作品吗？" confirm-button-text="删除" cancel-button-text="取消"
+                            @confirm="handleDelete(scope.row.id)">
                             <template #reference>
                                 <el-button size="small" type="danger" :icon="Delete">删除</el-button>
                             </template>
@@ -35,14 +46,9 @@
             </el-table>
 
             <div class="table-footer">
-                <el-pagination
-                    v-model:current-page="currentPage"
-                    v-model:page-size="pageSize"
-                    :page-sizes="[10, 20, 30, 50]"
-                    layout="total, sizes, prev, pager, next, jumper"
-                    :total="filteredData.length"
-                    @size-change="() => (currentPage = 1)"
-                />
+                <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+                    :page-sizes="[10, 20, 30, 50]" layout="total, sizes, prev, pager, next, jumper"
+                    :total="filteredData.length" @size-change="() => (currentPage = 1)" />
             </div>
         </el-card>
 
@@ -55,21 +61,26 @@
                     <el-input v-model="form.description" type="textarea" :autosize="{ minRows: 3 }" />
                 </el-form-item>
                 <el-form-item label="图片">
-                    <el-upload
-                        class="image-uploader"
-                        action="/api/upload?type=works"
-                        name="image"
-                        :headers="uploadHeaders"
-                        :show-file-list="false"
-                        :on-success="handleImageSuccess"
-                        :before-upload="beforeImageUpload"
-                    >
+                    <el-upload class="image-uploader" action="/api/upload?type=works" name="image"
+                        :headers="uploadHeaders" :show-file-list="false" :on-success="handleImageSuccess"
+                        :before-upload="beforeImageUpload">
                         <img v-if="form.imageUrl" :src="previewImage" class="image" />
-                        <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
+                        <el-icon v-else class="image-uploader-icon">
+                            <Plus />
+                        </el-icon>
                     </el-upload>
                 </el-form-item>
                 <el-form-item label="链接">
                     <el-input v-model="form.link" />
+                </el-form-item>
+                <el-form-item label="社团标签">
+                    <el-select v-model="form.club" placeholder="选择或输入社团标签" filterable allow-create default-first-option
+                        clearable style="width: 100%">
+                        <el-option v-for="c in clubOptions" :key="c" :label="c" :value="c" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="精选">
+                    <el-switch v-model="form.featured" :disabled="!isAdmin" active-text="是" inactive-text="否" />
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -85,9 +96,22 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue';
 import apiClient from '@/api';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { Plus, Edit, Delete, Search } from '@element-plus/icons-vue';
 import type { UploadProps } from 'element-plus';
+
+function parseJwtRole(): string | null {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) return null;
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload?.role ?? null;
+    } catch {
+        return null;
+    }
+}
 
 interface Work {
     id: number;
@@ -95,6 +119,9 @@ interface Work {
     description: string;
     imageUrl: string;
     link: string;
+    club?: string;
+    featured?: number; // 0/1
+    submitter?: string;
 }
 
 const tableData = ref<Work[]>([]);
@@ -106,12 +133,15 @@ const keyword = ref('');
 const currentPage = ref(1);
 const pageSize = ref(10);
 
+const isAdmin = computed(() => parseJwtRole() === 'admin');
+
 const form = reactive<Partial<Work>>({
     id: undefined,
     title: '',
     description: '',
     imageUrl: '',
     link: '',
+    club: '',
 });
 
 const dialogTitle = computed(() => (isEditMode.value ? '编辑作品' : '添加作品'));
@@ -145,11 +175,19 @@ onMounted(() => {
     fetchData();
 });
 
+const clubOptions = computed(() => {
+    const set = new Set<string>();
+    tableData.value.forEach(w => { if (w.club) set.add(w.club); });
+    return Array.from(set).sort();
+});
+
 const filteredData = computed(() => {
     const kw = keyword.value.trim().toLowerCase();
     if (!kw) return tableData.value;
     return tableData.value.filter((item) =>
-        (item.title || '').toLowerCase().includes(kw) || (item.description || '').toLowerCase().includes(kw)
+        (item.title || '').toLowerCase().includes(kw) ||
+        (item.description || '').toLowerCase().includes(kw) ||
+        (item.club || '').toLowerCase().includes(kw)
     );
 });
 
@@ -159,7 +197,7 @@ const pagedData = computed(() => {
 });
 
 const resetForm = () => {
-    Object.assign(form, { id: undefined, title: '', description: '', imageUrl: '', link: '' });
+    Object.assign(form, { id: undefined, title: '', description: '', imageUrl: '', link: '', club: '' });
 };
 
 const handleCreate = () => {
@@ -196,17 +234,31 @@ const beforeImageUpload: UploadProps['beforeUpload'] = (rawFile) => {
 
 const handleSave = async () => {
     try {
+        const payload: any = { ...form };
+        // el-switch 会给出 boolean；后端已能接受，但这里也兼容为 0/1
+        if (typeof payload.featured === 'boolean') payload.featured = payload.featured ? 1 : 0;
         if (isEditMode.value) {
-            await apiClient.put(`/works/${form.id}`, form);
+            await apiClient.put(`/works/${form.id}`, payload);
             ElMessage.success('更新成功');
         } else {
-            await apiClient.post('/works', form);
+            await apiClient.post('/works', payload);
             ElMessage.success('创建成功');
         }
         dialogVisible.value = false;
         fetchData();
     } catch (error) {
         ElMessage.error('保存失败');
+    }
+};
+
+const handleToggleFeatured = async (row: Work, val: boolean) => {
+    try {
+        const featured = val ? 1 : 0;
+        await apiClient.put(`/works/${row.id}/featured`, { featured });
+        row.featured = featured;
+        ElMessage.success('已更新精选状态');
+    } catch (error) {
+        ElMessage.error('更新精选状态失败');
     }
 };
 
@@ -222,15 +274,28 @@ const handleDelete = async (id: number) => {
 </script>
 
 <style scoped>
-.page-card { background: var(--card-bg); }
+.page-card {
+    background: var(--card-bg);
+}
+
 .controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 14px;
 }
-.control-actions { display: flex; align-items: center; gap: 10px; }
-.table-footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+
+.control-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
 
 .image-uploader .image {
     width: 178px;

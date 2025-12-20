@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS news (
   image VARCHAR(255),
   summary TEXT,
   content TEXT NOT NULL,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
+  user_id INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -65,6 +67,9 @@ CREATE TABLE IF NOT EXISTS works (
   description TEXT,
   imageUrl VARCHAR(255),
   link VARCHAR(255),
+  club VARCHAR(255),
+  featured TINYINT(1) NOT NULL DEFAULT 0,
+  user_id INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -82,7 +87,8 @@ CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  role ENUM('admin', 'editor', 'viewer') NOT NULL DEFAULT 'viewer',
+  role ENUM('admin', 'editor', 'viewer', 'member') NOT NULL DEFAULT 'viewer',
+  nickname VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -93,5 +99,19 @@ CREATE TABLE IF NOT EXISTS members (
   logo VARCHAR(255),
   link VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 站点公告，用于首页 Alert 展示
+CREATE TABLE IF NOT EXISTS site_announcements (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  content TEXT,
+  type ENUM('info','success','warning','error') NOT NULL DEFAULT 'info',
+  enabled TINYINT(1) NOT NULL DEFAULT 1,
+  closeable TINYINT(1) NOT NULL DEFAULT 1,
+  start_at DATETIME NULL,
+  end_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 

@@ -90,10 +90,17 @@ async function seed() {
     const worksPath = path.join(__dirname, '..', '..', '..', 'public', 'data', 'works.json')
     const worksData = JSON.parse(await fs.readFile(worksPath, 'utf-8'))
     for (const work of worksData) {
-      await connection.query(
-        'INSERT INTO works (id, title, description, imageUrl, link) VALUES (?, ?, ?, ?, ?)',
-        [work.id, work.title, work.description, work.imageUrl, work.link],
-      )
+      if (typeof work.club !== 'undefined') {
+        await connection.query(
+          'INSERT INTO works (id, title, description, imageUrl, link, club) VALUES (?, ?, ?, ?, ?, ?)',
+          [work.id, work.title, work.description, work.imageUrl, work.link, work.club],
+        )
+      } else {
+        await connection.query(
+          'INSERT INTO works (id, title, description, imageUrl, link) VALUES (?, ?, ?, ?, ?)',
+          [work.id, work.title, work.description, work.imageUrl, work.link],
+        )
+      }
     }
     console.log('Works data seeded successfully.')
 

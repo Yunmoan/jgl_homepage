@@ -13,6 +13,7 @@ import fameMembersRoutes from './routes/fameMembers'
 import messagesRoutes from './routes/messages'
 import usersRoutes from './routes/users'
 import uploadRoutes from './routes/upload'
+import announcementsRoutes from './routes/announcements'
 import path from 'path'
 
 const app = express()
@@ -58,6 +59,9 @@ app.use('/api/users', usersRoutes)
 
 // Upload route
 app.use('/api/upload', uploadRoutes)
+
+// Announcements routes
+app.use('/api/announcements', announcementsRoutes)
 
 app.get('/', (req, res) => {
   res.send('Hello from the backend!')
