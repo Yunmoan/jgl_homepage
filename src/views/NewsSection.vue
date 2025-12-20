@@ -108,9 +108,10 @@ const setCardRef = (el: HTMLElement | null, idx: number) => {
 const calcSpan = (el: HTMLElement) => {
   const grid = gridRef.value
   if (!grid) return 1
-  const content = el
-  const height = content.offsetHeight
-  const span = Math.ceil((height + GRID_GAP) / ROW_HEIGHT)
+  // 使用更精确的高度计算，包含边距/内边距
+  const height = el.getBoundingClientRect().height
+  // Masonry 公式：ceil((itemHeight + gap) / (rowHeight + gap))
+  const span = Math.ceil((height + GRID_GAP) / (ROW_HEIGHT + GRID_GAP))
   return Math.max(span, 1)
 }
 
@@ -128,7 +129,9 @@ const onItemLoad = (idx?: number) => {
 }
 
 watch(paginatedNews, async () => {
-  // 数据页切换或初次加载后重算
+  // 切换分页时重置引用并重算
+  cardRefs.value = []
+  rowSpans.value = []
   await nextTick()
   computeAllSpans()
 })
@@ -139,6 +142,10 @@ const onResize = () => {
 
 onMounted(() => {
   window.addEventListener('resize', onResize)
+  // 等待页面所有资源加载完毕，避免首屏计算过小
+  window.addEventListener('load', () => {
+    computeAllSpans()
+  })
 })
 
 onUnmounted(() => {
@@ -220,7 +227,7 @@ onUnmounted(() => {
 }
 
 .news-card:hover {
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  box-shadow: 0 0 30px rgba(0, 0, 0, .15);
 }
 
 /* 封面 */
