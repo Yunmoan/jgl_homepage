@@ -10,6 +10,12 @@
       <el-table-column prop="title" label="标题" />
       <el-table-column prop="author" label="作者" width="150" />
       <el-table-column prop="date" label="日期" width="200" />
+      <el-table-column prop="tags" label="标签" width="220">
+        <template #default="scope">
+          <el-tag v-for="t in (scope.row.tags || [])" :key="t" type="info" size="small"
+            style="margin-right:4px;margin-bottom:4px;">{{ t }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="submitter" label="提交人" width="160" />
       <el-table-column prop="status" label="状态" width="140">
         <template #default="scope">
@@ -41,6 +47,12 @@
         <el-form-item label="日期">
           <el-date-picker v-model="form.date" type="datetime" placeholder="选择日期时间" format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DD HH:mm:ss" />
+        </el-form-item>
+        <el-form-item label="标签">
+          <el-select v-model="form.tags" multiple :multiple-limit="1" filterable allow-create default-first-option
+            placeholder="仅允许选择1个标签（输入后回车创建）">
+            <el-option v-for="opt in tagOptions" :key="opt" :label="opt" :value="opt" />
+          </el-select>
         </el-form-item>
         <el-form-item label="图片">
           <el-upload class="image-uploader" action="/api/upload?type=news" name="image" :headers="uploadHeaders"
@@ -107,6 +119,7 @@ interface NewsArticle {
   content: string;
   submitter?: string;
   status?: 'pending' | 'approved' | 'rejected';
+  tags?: string[];
 }
 
 const tableData = ref<NewsArticle[]>([]);
@@ -126,6 +139,7 @@ const form = reactive<Partial<NewsArticle>>({
   image: '',
   summary: '',
   content: '',
+  tags: [],
 });
 
 const dialogTitle = computed(() => (isEditMode.value ? '编辑新闻' : '创建新闻'));
@@ -139,7 +153,10 @@ const fetchNews = async () => {
   loading.value = true;
   try {
     const response = await apiClient.get('/news');
-    tableData.value = response.data;
+    tableData.value = (response.data || []).map((r: any) => ({
+      ...r,
+      tags: Array.isArray(r.tags) ? r.tags : [],
+    }));
   } catch (error) {
     ElMessage.error('获取新闻列表失败');
     console.error('Failed to fetch news:', error);
@@ -164,6 +181,14 @@ onMounted(() => {
   fetchNews();
 });
 
+const tagOptions = computed<string[]>(() => {
+  const set = new Set<string>();
+  for (const r of tableData.value) {
+    (r.tags || []).forEach((t: string) => set.add(t));
+  }
+  return Array.from(set);
+});
+
 const resetForm = () => {
   const authorDefault = me.value?.nickname || me.value?.username || '';
   Object.assign(form, {
@@ -174,6 +199,7 @@ const resetForm = () => {
     image: '',
     summary: '',
     content: '',
+    tags: [],
   });
 };
 
@@ -185,6 +211,7 @@ const handleCreate = () => {
 
 const handleEdit = (row: NewsArticle) => {
   Object.assign(form, row);
+  form.tags = Array.isArray(row.tags) ? [...row.tags] : [];
   isEditMode.value = true;
   dialogVisible.value = true;
 };

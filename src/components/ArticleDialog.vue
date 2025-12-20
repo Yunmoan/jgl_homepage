@@ -4,6 +4,7 @@
       <div class="dialog-content">
         <div class="dialog-header">
           <img v-if="article && article.image" :src="article.image" :alt="article.title" class="header-image">
+          <div class="badge">{{ (article.tags && article.tags.length ? article.tags[0] : '新闻') }}</div>
           <div class="header-overlay"></div>
           <div class="header-content">
             <h2 v-if="article" class="dialog-title">{{ article.title }}</h2>
@@ -22,13 +23,14 @@ import { computed, watch, onUnmounted } from 'vue';
 import { marked } from 'marked';
 
 interface Article {
-  id: number;
-  title: string;
-  date: string;
-  author: string;
-  image: string;
-  summary: string;
-  content: string;
+  id: number
+  title: string
+  date: string
+  image: string
+  summary: string
+  content: string
+  author: string
+  tags?: string[]
 }
 
 const props = defineProps<{
@@ -290,5 +292,18 @@ onUnmounted(() => {
 .dialog-fade-leave-to .dialog-content {
   opacity: 0;
   transform: scale(0.9) translateY(-20px);
+}
+
+.badge {
+  position: absolute;
+  right: 2rem;
+  bottom: 2rem;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  z-index: 2;
 }
 </style>

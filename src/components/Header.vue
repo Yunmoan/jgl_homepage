@@ -71,7 +71,7 @@ const navItems = ref([
   { to: '/home#home', text: '首页', en: 'HOME' },
   { to: '/home#about', text: '关于', en: 'ABOUT' },
   { to: '/home#works', text: '制品', en: 'WORKS' },
-  { to: '/home#news', text: '新闻', en: 'NEWS' },
+  { to: '/news', text: '新闻', en: 'NEWS' },
   { to: '/home#history', text: '高联足迹', en: 'HISTORY' },
   { to: '/home#members', text: '成员社团', en: 'MEMBERS' },
   { to: '/fames', text: '名人堂', en: 'FAMES' },

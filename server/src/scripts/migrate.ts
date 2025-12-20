@@ -69,6 +69,21 @@ async function migrate() {
       }
     }
 
+    // Ensure news.tags column exists (TEXT storing JSON array)
+    const [newsTags] = await connection.query(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME='news' AND COLUMN_NAME='tags'",
+    )
+    if (Array.isArray(newsTags) && newsTags.length === 0) {
+      try {
+        await connection.query('ALTER TABLE news ADD COLUMN tags TEXT NULL')
+        console.log('Added missing column news.tags')
+      } catch (err: any) {
+        if (err?.code !== 'ER_DUP_FIELDNAME') {
+          console.warn('Attempt to add news.tags failed:', err)
+        }
+      }
+    }
+
     // Ensure users.role ENUM includes 'member'
     const [roleRows]: any = await connection.query(
       "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME='users' AND COLUMN_NAME='role'",
