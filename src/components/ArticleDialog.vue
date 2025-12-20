@@ -4,7 +4,7 @@
       <div class="dialog-content">
         <div class="dialog-header">
           <img v-if="article && article.image" :src="article.image" :alt="article.title" class="header-image">
-          <div class="badge">{{ (article.tags && article.tags.length ? article.tags[0] : '新闻') }}</div>
+          <div v-if="article" class="badge">{{ (article.tags && article.tags.length ? article.tags[0] : '新闻') }}</div>
           <div class="header-overlay"></div>
           <div class="header-content">
             <h2 v-if="article" class="dialog-title">{{ article.title }}</h2>

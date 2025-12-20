@@ -2,29 +2,26 @@
   <div class="news-section-wrapper">
     <div class="news-section-container">
       <div class="section-header">
-        <h2 class="section-title">新闻</h2>
+        <h2 class="section-title">近期<span class="accent">活动</span></h2>
       </div>
 
       <transition name="list-fade" mode="out-in">
         <div class="news-viewport" :key="currentPage">
-          <ul class="news-grid">
-            <li v-for="article in paginatedNews" :key="article.id" class="news-card" @click="selectArticle(article)">
-              <div class="card-image-wrapper">
-                <img v-if="article.image" :src="article.image" :alt="article.title" class="card-image"
-                  @load="onItemLoad" />
+          <ul class="news-grid" ref="gridRef">
+            <li v-for="(article, idx) in paginatedNews" :key="article.id" class="news-card"
+              :ref="(el) => setCardRef(el as HTMLElement, idx)" :style="{ gridRowEnd: `span ${rowSpans[idx] || 1}` }"
+              @click="selectArticle(article)">
+              <div class="card-image-wrapper" v-if="article.image">
+                <img :src="article.image" :alt="article.title" class="card-image" @load="onItemLoad(idx)" />
                 <div class="badge">{{ (article.tags && article.tags.length ? article.tags[0] : '新闻') }}</div>
               </div>
               <div class="card-body">
-                <h3 class="card-title">{{ article.title }}
-                  <span v-if="!article.image" class="badge">{{ (article.tags && article.tags.length ?
-                    article.tags[0] : '新闻') }}
-                  </span>
-                </h3>
+                <h3 class="card-title">{{ article.title }}</h3>
                 <div v-if="article.tags && article.tags.length" class="tags-row">
                   <span v-for="t in article.tags" :key="t" class="tag-chip">{{ t }}</span>
                 </div>
-                <p class="card-summary">作者：{{ article.author }}</p>
-                <p v-if="article.summary" class="card-summary"> {{ article.summary }}</p>
+                <p class="card-summary" v-if="article.author">作者：{{ article.author }}</p>
+                <p v-if="article.summary" class="card-summary">{{ article.summary }}</p>
                 <div class="card-footer" @click.stop>
                   <span class="card-date">{{ formatDate(article.date) }}</span>
                   <button class="more-btn" @click="selectArticle(article)">了解更多</button>
@@ -33,7 +30,7 @@
             </li>
           </ul>
           <div class="viewport-mask">
-            <router-link to="/news" class="more-btn-primary mask-btn">查看更多新闻</router-link>
+            <router-link to="/news" class="more-btn-primary mask-btn">查看更多活动</router-link>
           </div>
         </div>
       </transition>
@@ -42,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue'
 
 interface Article {
   id: number
@@ -74,6 +71,9 @@ onMounted(async () => {
     const res = await fetch('/api/news')
     if (!res.ok) throw new Error('Network Error')
     news.value = await res.json()
+    await nextTick()
+    // 初始计算
+    computeAllSpans()
   } catch (e) {
     console.error('Failed to fetch news data:', e)
   }
@@ -82,7 +82,7 @@ onMounted(async () => {
 const currentPage = ref(1)
 const itemsPerPage = 6 // 首页展示 6 条（2 行 x 3 列）
 
-// const totalPages = computed(() => Math.ceil(news.value.length / itemsPerPage))
+const totalPages = computed(() => Math.ceil(news.value.length / itemsPerPage))
 
 const paginatedNews = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
@@ -92,13 +92,58 @@ const paginatedNews = computed(() => {
 
 const selectArticle = (article: Article) => emit('select-article', article)
 
-// function nextPage() {
-//   if (currentPage.value < totalPages.value) currentPage.value++
-// }
+// Masonry 布局计算
+const gridRef = ref<HTMLElement | null>(null)
+const cardRefs = ref<HTMLElement[]>([])
+const rowSpans = ref<number[]>([])
+const ROW_HEIGHT = 8 // 与 CSS grid-auto-rows 一致
+const GRID_GAP = 24
 
-// function prevPage() {
-//   if (currentPage.value > 1) currentPage.value--
-// }
+const setCardRef = (el: HTMLElement | null, idx: number) => {
+  if (el) {
+    cardRefs.value[idx] = el
+  }
+}
+
+const calcSpan = (el: HTMLElement) => {
+  const grid = gridRef.value
+  if (!grid) return 1
+  const content = el
+  const height = content.offsetHeight
+  const span = Math.ceil((height + GRID_GAP) / ROW_HEIGHT)
+  return Math.max(span, 1)
+}
+
+const computeAllSpans = () => {
+  rowSpans.value = cardRefs.value.map((el) => (el ? calcSpan(el) : 1))
+}
+
+const onItemLoad = (idx?: number) => {
+  // 图片加载后单个或全部重算
+  if (typeof idx === 'number' && cardRefs.value[idx]) {
+    rowSpans.value[idx] = calcSpan(cardRefs.value[idx])
+  } else {
+    computeAllSpans()
+  }
+}
+
+watch(paginatedNews, async () => {
+  // 数据页切换或初次加载后重算
+  await nextTick()
+  computeAllSpans()
+})
+
+const onResize = () => {
+  computeAllSpans()
+}
+
+onMounted(() => {
+  window.addEventListener('resize', onResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize)
+})
 </script>
 
 <style scoped>
@@ -133,7 +178,7 @@ const selectArticle = (article: Article) => emit('select-article', article)
   color: #ef4444;
 }
 
-/* 仅显示两行，第二行显示一半：用视窗 + 渐变遮罩 */
+/* 仅显示两行，第二行半遮罩 */
 .news-viewport {
   position: relative;
 }
@@ -151,45 +196,43 @@ const selectArticle = (article: Article) => emit('select-article', article)
   justify-content: center;
   padding-bottom: 6px;
   pointer-events: auto;
-  /* 覆盖并阻止下方交互 */
 }
 
-/* 网格 */
+/* Masonry Grid：先 3 列，再智能分列 */
 .news-grid {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-auto-rows: 8px;
+  gap: 24px;
   align-items: start;
 }
 
 /* 卡片 */
 .news-card {
   background: #111827;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: box-shadow .25s ease;
 }
 
 .news-card:hover {
-  box-shadow: 0 0px 20px rgba(0, 0, 0, .15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
 }
 
 /* 封面 */
 .card-image-wrapper {
   position: relative;
   width: 100%;
-  /* 自适应高度，不固定比例 */
   overflow: hidden;
 }
 
 .card-image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   display: block;
   transition: transform .35s ease;
 }
@@ -292,8 +335,6 @@ const selectArticle = (article: Article) => emit('select-article', article)
 
 .more-btn-primary:hover {
   background: #ab2c41;
-  /* transform: translateY(-1px); */
-  /* box-shadow: 0 10px 22px rgba(244, 63, 94, .4); */
 }
 
 /* 过渡 */
@@ -310,7 +351,6 @@ const selectArticle = (article: Article) => emit('select-article', article)
 /* 响应式 */
 @media (max-width: 1024px) {
   .news-grid {
-    column-count: 2;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -325,7 +365,7 @@ const selectArticle = (article: Article) => emit('select-article', article)
   }
 
   .news-grid {
-    column-count: 1;
+    grid-template-columns: 1fr;
   }
 
   .viewport-mask {

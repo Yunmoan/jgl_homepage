@@ -64,14 +64,7 @@
                 <span>理事会</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/friend-links" v-if="can('admin-friend-links')">
-              <template #title>
-                <el-icon>
-                  <LinkIcon />
-                </el-icon>
-                <span>友情链接</span>
-              </template>
-            </el-menu-item>
+
             <el-menu-item index="/admin/messages" v-if="can('admin-messages')">
               <template #title>
                 <el-icon>
@@ -80,14 +73,7 @@
                 <span>留言管理</span>
               </template>
             </el-menu-item>
-            <el-menu-item index="/admin/announcements" v-if="can('admin-announcements')">
-              <template #title>
-                <el-icon>
-                  <Notification />
-                </el-icon>
-                <span>公告管理</span>
-              </template>
-            </el-menu-item>
+
           </el-sub-menu>
           <el-sub-menu index="system" v-if="showSystemGroup">
             <template #title>
@@ -102,6 +88,22 @@
                   <UserFilled />
                 </el-icon>
                 <span>用户管理</span>
+              </template>
+            </el-menu-item>
+            <el-menu-item index="/admin/announcements" v-if="can('admin-announcements')">
+              <template #title>
+                <el-icon>
+                  <Notification />
+                </el-icon>
+                <span>公告管理</span>
+              </template>
+            </el-menu-item>
+            <el-menu-item index="/admin/friend-links" v-if="can('admin-friend-links')">
+              <template #title>
+                <el-icon>
+                  <LinkIcon />
+                </el-icon>
+                <span>友情链接</span>
               </template>
             </el-menu-item>
           </el-sub-menu>
