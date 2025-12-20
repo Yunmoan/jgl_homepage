@@ -2,7 +2,7 @@
   <div class="news-section-wrapper">
     <div class="news-section-container">
       <div class="section-header">
-        <h2 class="section-title">近期<span class="accent">活动</span></h2>
+        <h2 class="section-title">新闻</h2>
       </div>
 
       <transition name="list-fade" mode="out-in">
@@ -30,7 +30,7 @@
             </li>
           </ul>
           <div class="viewport-mask">
-            <router-link to="/news" class="more-btn-primary mask-btn">查看更多活动</router-link>
+            <router-link to="/news" class="more-btn-primary mask-btn">查看全部新闻</router-link>
           </div>
         </div>
       </transition>
