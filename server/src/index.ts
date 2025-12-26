@@ -14,7 +14,9 @@ import messagesRoutes from './routes/messages'
 import usersRoutes from './routes/users'
 import uploadRoutes from './routes/upload'
 import announcementsRoutes from './routes/announcements'
+import systemRoutes from './routes/system'
 import path from 'path'
+import { requestLogger, errorLogger, log } from './logger'
 
 const app = express()
 const port = config.server.port
@@ -24,6 +26,7 @@ const port = config.server.port
 app.set('trust proxy', 1)
 
 app.use(cors())
+app.use(requestLogger)
 app.use(express.json({ limit: '10mb' }))
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
@@ -63,10 +66,15 @@ app.use('/api/upload', uploadRoutes)
 // Announcements routes
 app.use('/api/announcements', announcementsRoutes)
 
+// System info
+app.use('/api/system', systemRoutes)
+
 app.get('/', (req, res) => {
   res.send('Hello from the backend!')
 })
 
+app.use(errorLogger)
+
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`)
+  log(`Server is running on http://localhost:${port}`)
 })

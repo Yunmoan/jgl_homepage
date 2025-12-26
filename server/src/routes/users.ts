@@ -39,20 +39,57 @@ router.put('/me/profile', protect, async (req: any, res) => {
 })
 
 // @route   PUT /api/users/:id/profile
-// @desc    Admin updates a user's profile (nickname)
+// @desc    Admin updates a user's profile (username, nickname)
 // @access  Private (Admin)
 router.put('/:id/profile', protect, authorize('admin'), async (req, res) => {
   const { id } = req.params
-  const { nickname } = req.body as { nickname?: string }
+  const { username, nickname } = req.body as { username?: string; nickname?: string }
+
+  if (username && username.trim() === '') {
+    return res.status(400).json({ error: 'username cannot be empty' })
+  }
+
   try {
-    const [result] = await pool.query('UPDATE users SET nickname = ? WHERE id = ?', [
-      nickname ?? null,
-      id,
-    ])
-    if ((result as any).affectedRows === 0) return res.status(404).json({ error: 'User not found' })
+    // If username is to be updated, check for duplicates first
+    if (username) {
+      const [dupRows] = await pool.query('SELECT id FROM users WHERE username = ? AND id <> ?', [
+        username,
+        id,
+      ])
+      if (Array.isArray(dupRows) && dupRows.length > 0) {
+        return res.status(409).json({ error: 'Username already exists' })
+      }
+    }
+
+    // Build dynamic SET clause
+    const updates: string[] = []
+    const params: any[] = []
+    if (username !== undefined) {
+      updates.push('username = ?')
+      params.push(username)
+    }
+    if (nickname !== undefined) {
+      updates.push('nickname = ?')
+      params.push(nickname ?? null)
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' })
+    }
+
+    params.push(id)
+    const [result] = await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params)
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
     res.json({ message: 'User profile updated' })
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error updating user profile:', e)
+    if (e && e.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Username already exists' })
+    }
     res.status(500).json({ error: 'Internal Server Error' })
   }
 })
@@ -220,6 +257,88 @@ router.delete('/:id', protect, authorize('admin'), async (req: any, res) => {
     res.json({ message: 'User deleted successfully' })
   } catch (error) {
     console.error('Error deleting user:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+// ====================
+// CSV Bulk Import
+// ====================
+import multer from 'multer'
+
+// Use in-memory storage for small CSV uploads
+const csvUpload = multer({ storage: multer.memoryStorage() })
+
+// GET template CSV
+router.get('/import/template', protect, authorize('admin'), (req, res) => {
+  const csvTemplate = 'username,password,role,nickname\n'
+  res.setHeader('Content-Type', 'text/csv')
+  res.setHeader('Content-Disposition', 'attachment; filename="users_template.csv"')
+  res.send(csvTemplate)
+})
+
+// POST bulk import
+router.post('/import', protect, authorize('admin'), csvUpload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'CSV file is required' })
+  try {
+    const content = req.file.buffer.toString('utf-8').trim()
+    if (!content) return res.status(400).json({ error: 'CSV is empty' })
+
+    const lines = content.split(/\r?\n/)
+    const header = lines.shift()?.split(',') ?? []
+    const requiredHeader = ['username', 'password', 'role', 'nickname']
+    const headerLower = header.map((h) => h.trim().toLowerCase())
+    if (requiredHeader.some((h) => !headerLower.includes(h))) {
+      return res.status(400).json({ error: 'Invalid header in CSV' })
+    }
+
+    const idx = (name: string) => headerLower.indexOf(name)
+
+    const results: { username: string; status: 'imported' | 'skipped'; reason?: string }[] = []
+
+    for (const line of lines) {
+      if (!line.trim()) continue
+      const cols = line.split(',')
+      const username = cols[idx('username')]?.trim()
+      const password = cols[idx('password')]?.trim()
+      const role = cols[idx('role')]?.trim() || 'viewer'
+      const nickname = cols[idx('nickname')]?.trim() || null
+
+      if (!username || !password) {
+        results.push({ username: username || '(empty)', status: 'skipped', reason: 'Missing username/password' })
+        continue
+      }
+      if (!['admin', 'editor', 'viewer', 'member'].includes(role)) {
+        results.push({ username, status: 'skipped', reason: 'Invalid role' })
+        continue
+      }
+      try {
+        const [exist] = await pool.query('SELECT id FROM users WHERE username = ?', [username])
+        if (Array.isArray(exist) && exist.length > 0) {
+          results.push({ username, status: 'skipped', reason: 'Duplicate username' })
+          continue
+        }
+        const salt = await bcrypt.genSalt(10)
+        const hashed = await bcrypt.hash(password, salt)
+        await pool.query('INSERT INTO users (username, password, role, nickname) VALUES (?, ?, ?, ?)', [
+          username,
+          hashed,
+          role,
+          nickname,
+        ])
+        results.push({ username, status: 'imported' })
+      } catch (err: any) {
+        console.error('Import error for', username, err)
+        results.push({ username, status: 'skipped', reason: err.message || 'Error' })
+      }
+    }
+
+    const imported = results.filter((r) => r.status === 'imported').length
+    const skipped = results.length - imported
+
+    res.json({ imported, skipped, details: results })
+  } catch (e) {
+    console.error('CSV import error:', e)
     res.status(500).json({ error: 'Internal Server Error' })
   }
 })

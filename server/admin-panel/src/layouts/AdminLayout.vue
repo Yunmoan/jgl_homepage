@@ -98,6 +98,7 @@
                 <span>公告管理</span>
               </template>
             </el-menu-item>
+
             <el-menu-item index="/admin/friend-links" v-if="can('admin-friend-links')">
               <template #title>
                 <el-icon>
@@ -107,6 +108,14 @@
               </template>
             </el-menu-item>
           </el-sub-menu>
+          <el-menu-item index="/admin/system-info" v-if="can('admin-system-info')">
+            <template #title>
+              <el-icon>
+                <InfoFilled />
+              </el-icon>
+              <span>系统信息</span>
+            </template>
+          </el-menu-item>
         </el-menu>
       </el-scrollbar>
     </el-aside>
@@ -132,6 +141,7 @@
               <el-dropdown-menu>
                 <el-dropdown-item @click="openProfile">编辑资料</el-dropdown-item>
                 <el-dropdown-item @click="openChangePwd">修改密码</el-dropdown-item>
+                <!-- <el-dropdown-item @click="openSystemInfo">系统信息</el-dropdown-item> -->
                 <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -184,6 +194,7 @@
           </span>
         </template>
       </el-dialog>
+
     </el-container>
   </el-container>
 </template>
@@ -208,6 +219,7 @@ import {
   ElementPlus,
   Fold,
   Expand,
+  InfoFilled,
 } from '@element-plus/icons-vue'
 
 function getRole(): 'admin' | 'editor' | 'viewer' | 'member' | null {
@@ -236,6 +248,7 @@ const routeRoleMap: Record<string, Array<'admin' | 'editor' | 'member'>> = {
   'admin-messages': ['admin', 'editor'],
   'admin-users': ['admin'],
   'admin-announcements': ['admin', 'editor'],
+  'admin-system-info': ['admin', 'editor', 'member'],
 }
 
 const can = (name: string) => {
@@ -351,6 +364,20 @@ const submitProfile = async () => {
   } catch (e: any) {
     const msg = e?.response?.data?.error || '资料更新失败'
     ElMessage.error(msg)
+  }
+}
+
+// System info
+const sysDialogVisible = ref(false)
+const systemInfo = ref<any>(null)
+
+const openSystemInfo = async () => {
+  try {
+    const { data } = await apiClient.get('/system/info')
+    systemInfo.value = data
+    sysDialogVisible.value = true
+  } catch {
+    ElMessage.error('无法获取系统信息')
   }
 }
 

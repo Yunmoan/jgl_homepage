@@ -14,6 +14,7 @@ import FriendLinksManagement from '@/views/FriendLinksManagement.vue'
 import MessagesManagement from '@/views/MessagesManagement.vue'
 import UserManagement from '@/views/UserManagement.vue'
 import AnnouncementsManagement from '@/views/AnnouncementsManagement.vue'
+import SystemInfo from '@/views/SystemInfo.vue'
 
 function getRole(): string | null {
   try {
@@ -101,6 +102,12 @@ const routes = [
         component: UserManagement,
         meta: { title: '用户管理', roles: ['admin'] },
       },
+      {
+        path: 'system-info',
+        name: 'admin-system-info',
+        component: SystemInfo,
+        meta: { title: '系统信息', roles: ['admin', 'editor', 'member'] },
+      }
     ],
   },
   // Redirect root to login

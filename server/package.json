@@ -1,6 +1,6 @@
 {
   "name": "jgl-homepage-backend",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Backend for jgl_homepage",
   "main": "dist/index.js",
   "scripts": {

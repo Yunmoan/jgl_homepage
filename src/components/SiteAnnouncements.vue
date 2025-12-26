@@ -84,6 +84,7 @@ onMounted(async () => {
 
 .alert__content {
   color: #e9eef5;
+  text-align: center;
 }
 
 .alert__title {
