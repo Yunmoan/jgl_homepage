@@ -59,7 +59,7 @@
           </el-radio-group>
 
           <div v-if="imageInputMode === 'upload'">
-            <el-upload class="image-uploader" action="/api/upload?type=fame-members" name="image"
+            <el-upload class="image-uploader" action="/api/upload?type=fame_members" name="image"
               :headers="uploadHeaders" :show-file-list="false" :on-success="handleImageSuccess"
               :before-upload="beforeImageUpload">
               <img v-if="form.image" :src="previewImage" class="image" />
@@ -228,7 +228,7 @@ const handleEditorUpload = async (files: File[], callback: (urls: string[]) => v
     const uploads = validFiles.map((file) => {
       const fd = new FormData();
       fd.append('image', file);
-      return apiClient.post('/upload?type=fame-members', fd, {
+      return apiClient.post('/upload?type=fame_members', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     });

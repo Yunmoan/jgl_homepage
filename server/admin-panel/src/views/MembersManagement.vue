@@ -51,18 +51,20 @@
                     <el-input v-model="form.name" />
                 </el-form-item>
                 <el-form-item label="Logo">
-                     <el-upload
-                        class="image-uploader"
-                        action="/api/upload?type=members"
-                        name="image"
-                        :headers="uploadHeaders"
-                        :show-file-list="false"
-                        :on-success="handleImageSuccess"
-                        :before-upload="beforeImageUpload"
-                    >
-                        <img v-if="form.logo" :src="formatLogoUrl(form.logo)" class="image" />
-                        <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
-                    </el-upload>
+                    <div class="logo-upload-row">
+                        <div v-if="form.logo" class="logo-preview">
+                            <img :src="formatLogoUrl(form.logo)" alt="Logo" />
+                            <el-button type="danger" size="small" circle @click="form.logo = ''" class="remove-btn">
+                                <el-icon><Delete /></el-icon>
+                            </el-button>
+                        </div>
+                        <div v-else class="image-uploader" @click="triggerFileInput">
+                            <el-icon class="image-uploader-icon"><Plus /></el-icon>
+                        </div>
+                        <div class="upload-hint">支持 JPG/PNG/WebP，将自动转换为圆形 WebP</div>
+                    </div>
+                    <input ref="fileInputRef" type="file" accept="image/jpeg,image/png,image/webp" style="display:none"
+                        @change="handleFileChange" />
                 </el-form-item>
                 <el-form-item label="链接">
                     <el-input v-model="form.link" />
@@ -81,9 +83,8 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue';
 import apiClient from '@/api';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { Plus, Edit, Delete } from '@element-plus/icons-vue';
-import type { UploadProps } from 'element-plus';
 
 interface Member {
     id: number;
@@ -96,6 +97,8 @@ const tableData = ref<Member[]>([]);
 const loading = ref(true);
 const dialogVisible = ref(false);
 const isEditMode = ref(false);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const uploadLoading = ref(false);
 
 // 分页状态
 const currentPage = ref(1);
@@ -111,15 +114,10 @@ const form = reactive<Partial<Member>>({
 
 const dialogTitle = computed(() => (isEditMode.value ? '编辑成员' : '添加成员'));
 
-const uploadHeaders = computed(() => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-});
-
 const formatLogoUrl = (src?: string) => {
     if (!src) return '';
     if (src.startsWith('http://') || src.startsWith('https://')) return src;
-    return src; // 兼容 /uploads/... 由代理处理
+    return src;
 };
 
 const fetchData = async () => {
@@ -169,24 +167,45 @@ const handleEdit = (row: Member) => {
     dialogVisible.value = true;
 };
 
-const handleImageSuccess: UploadProps['onSuccess'] = (response) => {
-    form.logo = response.filePath;
-    ElMessage.success('Logo上传成功');
+const triggerFileInput = () => {
+    if (!form.name?.trim()) {
+        ElMessage.warning('请先输入成员名称');
+        return;
+    }
+    fileInputRef.value?.click();
 };
 
-const beforeImageUpload: UploadProps['beforeUpload'] = (rawFile) => {
-    const isJpgOrPngOrWebp = ['image/jpeg', 'image/png', 'image/webp'].includes(rawFile.type);
-    const isLt2M = rawFile.size / 1024 / 1024 < 2;
+const handleFileChange = async (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
 
-    if (!isJpgOrPngOrWebp) {
-        ElMessage.error('上传的Logo只能是 JPG, PNG, 或 WEBP 格式!');
-        return false;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        ElMessage.error('Logo只能是 JPG, PNG, 或 WEBP 格式');
+        return;
     }
-    if (!isLt2M) {
-        ElMessage.error('上传的Logo大小不能超过 2MB!');
-        return false;
+    if (file.size / 1024 / 1024 >= 5) {
+        ElMessage.error('Logo大小不能超过 5MB');
+        return;
     }
-    return true;
+
+    uploadLoading.value = true;
+    try {
+        const fd = new FormData();
+        fd.append('image', file);
+        fd.append('memberName', form.name || '未命名');
+
+        const res = await apiClient.post('/members/upload-logo', fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        form.logo = res.data.filePath;
+        ElMessage.success('Logo上传并处理成功');
+    } catch (err: any) {
+        ElMessage.error(err?.response?.data?.message || 'Logo上传失败');
+    } finally {
+        uploadLoading.value = false;
+        input.value = '';
+    }
 };
 
 const handleSave = async () => {
@@ -226,32 +245,60 @@ const handleDelete = async (id: number) => {
 }
 .control-actions { display: flex; align-items: center; gap: 10px; }
 
-.image-uploader .image {
+.logo-upload-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.logo-preview {
+    position: relative;
+    display: inline-block;
     width: 178px;
     height: 178px;
+}
+
+.logo-preview img {
+    width: 178px;
+    height: 178px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--el-border-color);
     display: block;
 }
-</style>
 
-<style>
-.image-uploader .el-upload {
+.logo-preview .remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+}
+
+.upload-hint {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+}
+
+.image-uploader {
+    width: 178px;
+    height: 178px;
     border: 1px dashed var(--el-border-color);
-    border-radius: 8px;
+    border-radius: 50%;
     cursor: pointer;
-    position: relative;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: var(--el-transition-duration-fast);
 }
 
-.image-uploader .el-upload:hover {
+.image-uploader:hover {
     border-color: var(--el-color-primary);
 }
 
 .el-icon.image-uploader-icon {
     font-size: 28px;
     color: #8c939d;
-    width: 178px;
-    height: 178px;
-    text-align: center;
 }
+</style>
+
+<style>
 </style>

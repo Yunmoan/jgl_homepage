@@ -2,6 +2,10 @@ import { Router } from 'express'
 import pool from '../db'
 import { protect, authorize } from '../middleware/auth'
 import { RowDataPacket } from 'mysql2'
+import multer from 'multer'
+import path from 'path'
+import fs from 'fs/promises'
+import sharp from 'sharp'
 
 const router = Router()
 
@@ -120,6 +124,105 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   } catch (error) {
     console.error('Error deleting member:', error)
     res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff']
+    if (!allowed.includes(file.mimetype)) {
+      cb(new Error('Unsupported file type'))
+      return
+    }
+    cb(null, true)
+  },
+})
+
+const CIRCULAR_DIR = path.join(__dirname, '../../uploads/member_logos_circular')
+
+// @route   POST /api/members/upload-logo
+// @desc    Upload and process a member logo: convert to WebP, circular mask, save to member_logos_circular
+// @access  Private (Admin, Editor)
+router.post(
+  '/upload-logo',
+  protect as any,
+  authorize('admin', 'editor') as any,
+  upload.single('image'),
+  async (req: any, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Please upload an image' })
+    }
+
+    const { memberName } = req.body
+    if (!memberName || !memberName.trim()) {
+      return res.status(400).json({ message: 'memberName is required' })
+    }
+
+    const name = memberName.trim()
+    const safeName = name.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+
+    try {
+      await fs.mkdir(CIRCULAR_DIR, { recursive: true })
+
+      const buffer = req.file.buffer
+      const size = 400
+      const diameter = size * 2
+
+      const processedBuffer = await sharp(buffer)
+        .resize(size, size, { fit: 'cover', position: 'center' })
+        .toBuffer()
+
+      const alpha = Buffer.alloc(diameter * diameter)
+      for (let y = 0; y < diameter; y++) {
+        for (let x = 0; x < diameter; x++) {
+          const cx = diameter / 2
+          const cy = diameter / 2
+          const r = size
+          const dx = x - cx
+          const dy = y - cy
+          alpha[y * diameter + x] = dx * dx + dy * dy <= r * r ? 255 : 0
+        }
+      }
+
+      const withAlpha = await sharp(processedBuffer)
+        .joinChannel(alpha, { raw: { width: diameter, height: diameter, channels: 1 } })
+        .webp({ quality: 80 })
+        .toBuffer()
+
+      const filename = `${safeName}.webp`
+      const filepath = path.join(CIRCULAR_DIR, filename)
+      await fs.writeFile(filepath, withAlpha)
+
+      const filePath = `/uploads/member_logos_circular/${filename}`
+      res.json({ message: 'Logo uploaded and processed successfully', filePath })
+    } catch (error: any) {
+      console.error('Error processing member logo:', error)
+      res.status(500).json({ message: `Failed to process logo: ${error.message}` })
+    }
+  },
+)
+
+// @route   DELETE /api/members/logo
+// @desc    Delete a member logo file
+// @access  Private (Admin, Editor)
+router.delete('/logo', protect as any, authorize('admin', 'editor') as any, async (req, res) => {
+  const { filepath } = req.body
+  if (!filepath) {
+    return res.status(400).json({ message: 'filepath is required' })
+  }
+  const normalized = filepath.replace(/^\//, '')
+  const fullPath = path.join(__dirname, '../../', normalized)
+  try {
+    await fs.unlink(fullPath)
+    res.json({ message: 'Logo deleted successfully' })
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      return res.status(404).json({ message: 'File not found' })
+    }
+    console.error('Error deleting logo:', error)
+    res.status(500).json({ message: 'Failed to delete logo' })
   }
 })
 

@@ -2,6 +2,8 @@ import { Router } from 'express'
 import pool from '../db'
 import { protect, authorize } from '../middleware/auth'
 import multer from 'multer'
+import axios from 'axios'
+import config from '../config'
 
 const router = Router()
 const upload = multer({ storage: multer.memoryStorage() })
@@ -76,9 +78,6 @@ router.post(
 // @route   POST /api/messages
 // @desc    Create a message (for public, pending approval)
 // @access  Public
-import axios from 'axios'
-import config from '../config'
-
 router.post('/', async (req, res) => {
   const { author, content, qq, token } = req.body
 

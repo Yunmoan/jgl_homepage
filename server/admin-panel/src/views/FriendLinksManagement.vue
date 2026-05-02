@@ -30,7 +30,7 @@
         <el-form-item label="Logo">
             <el-upload
                 class="image-uploader"
-                action="/api/upload?type=friend-links"
+                action="/api/upload?type=friend_links"
                 name="image"
                 :headers="uploadHeaders"
                 :show-file-list="false"
