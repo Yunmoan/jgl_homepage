@@ -7,14 +7,19 @@ import { protect, authorize } from '../middleware/auth'
 const router = express.Router()
 
 // ================= 安全白名单 =================
-const ALLOWED_TYPES = ['works', 'news', 'member_logos', 'general', 'history', 'fame_members', 'admins', 'members', 'friend_links'] as const
+const ALLOWED_TYPES = [
+  'works',
+  'news',
+  'member_logos',
+  'general',
+  'history',
+  'fame_members',
+  'admins',
+  'members',
+  'friend_links',
+] as const
 const ALLOWED_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.svg']
-const ALLOWED_MIME = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/svg+xml',
-]
+const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
 // ==============================================
 
@@ -57,7 +62,11 @@ const upload = multer({
 
 // Multer v2 emits errors on the request object via upload.errorFormatter or by default middleware
 // We handle multer errors before accessing req.file
-const handleMulterError = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const handleMulterError = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
   const typeParam = (req.query.type as string) || 'general'
   const type = ALLOWED_TYPES.includes(typeParam as any) ? typeParam : 'general'
   const maxSize = MAX_FILE_SIZE
@@ -84,7 +93,9 @@ const handleMulterError = (req: express.Request, res: express.Response, next: ex
         return res.status(400).json({ message: `Upload error: ${err.message}` })
       }
       if (err.message === 'Unsupported file type') {
-        return res.status(400).json({ message: 'Unsupported file type. Allowed: PNG, JPG, JPEG, WEBP, SVG.' })
+        return res
+          .status(400)
+          .json({ message: 'Unsupported file type. Allowed: PNG, JPG, JPEG, WEBP, SVG.' })
       }
       return res.status(400).json({ message: err.message })
     }
