@@ -28,7 +28,9 @@ app.set('trust proxy', 1)
 app.use(cors())
 app.use(requestLogger)
 app.use(express.json({ limit: '10mb' }))
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+const staticPath = path.join(__dirname, '../uploads')
+console.log(`[DEBUG] Static file middleware: serving from=${staticPath}`)
+app.use('/uploads', express.static(staticPath))
 
 // Auth routes
 app.use('/api/auth', authRoutes)

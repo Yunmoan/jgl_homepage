@@ -23,10 +23,9 @@ const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
 // ==============================================
 
-// Ensure the base uploads directory exists
-const uploadDir = './uploads/'
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir)
+const uploadBaseDir = path.join(__dirname, '../../uploads/')
+if (!fs.existsSync(uploadBaseDir)) {
+  fs.mkdirSync(uploadBaseDir, { recursive: true })
 }
 
 const storage = multer.diskStorage({
@@ -34,8 +33,7 @@ const storage = multer.diskStorage({
     const typeParam = (req.query.type as string) || 'general'
     const type = ALLOWED_TYPES.includes(typeParam as any) ? typeParam : 'general'
 
-    // directory traversal protection: ensure final path remains inside uploadDir
-    const dir = path.join(uploadDir, type)
+    const dir = path.join(uploadBaseDir, type)
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true })
     }
@@ -122,6 +120,7 @@ router.post(
     }
 
     const filePath = `/uploads/${type}/${req.file.filename}`
+    console.log(`[DEBUG] Upload: file written to=${req.file.path}, serving from=/uploads/${type}/, staticRoot=${require('path').join(__dirname,'../uploads')}`)
 
     res.json({
       message: 'File uploaded successfully',
