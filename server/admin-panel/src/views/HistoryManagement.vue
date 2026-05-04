@@ -37,7 +37,7 @@
           <div style="margin-top: 6px; color: var(--muted-text); font-size: 12px;">支持 Ctrl+V 粘贴图片或从工具栏上传，图片将自动上传并插入</div> -->
         </el-form-item>
         <el-form-item label="图片">
-          <el-upload class="image-uploader" action="/api/upload?type=history" name="image" :headers="uploadHeaders"
+          <el-upload class="image-uploader" action="/api/upload?type=pictures" name="image" :headers="uploadHeaders"
             :show-file-list="false" :on-success="handleImageSuccess" :before-upload="beforeImageUpload">
             <img v-if="form.image" :src="form.image" class="image" />
             <el-icon v-else class="image-uploader-icon">
