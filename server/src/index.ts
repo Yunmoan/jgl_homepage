@@ -17,6 +17,7 @@ import announcementsRoutes from './routes/announcements'
 import systemRoutes from './routes/system'
 import path from 'path'
 import { requestLogger, errorLogger, log } from './logger'
+import os from 'os'
 
 const app = express()
 const port = config.server.port
@@ -71,8 +72,55 @@ app.use('/api/announcements', announcementsRoutes)
 // System info
 app.use('/api/system', systemRoutes)
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.send('Hello from the backend!')
+})
+
+// CPU usage tracking: compare CPU ticks between samples
+let prevCpuInfo: ReturnType<typeof os.cpus> | null = null
+
+function calcCpuUsage(): number {
+  const currentCpuInfo = os.cpus()
+  if (!prevCpuInfo) {
+    prevCpuInfo = currentCpuInfo.map((cpu) => ({ ...cpu }))
+    return 0
+  }
+
+  let totalIdle = 0
+  let totalTick = 0
+
+  for (let i = 0; i < currentCpuInfo.length; i++) {
+    const prev = prevCpuInfo[i]
+    const curr = currentCpuInfo[i]
+    const prevTotal = Object.values(prev.times).reduce((a: number, b: number) => a + b, 0)
+    const currTotal = Object.values(curr.times).reduce((a: number, b: number) => a + b, 0)
+    const idleDiff = curr.times.idle - prev.times.idle
+    const totalDiff = currTotal - prevTotal
+    totalIdle += idleDiff
+    totalTick += totalDiff
+  }
+
+  prevCpuInfo = currentCpuInfo.map((cpu) => ({ ...cpu }))
+
+  if (totalTick === 0) return 0
+  return Math.round(((totalTick - totalIdle) / totalTick) * 100)
+}
+
+app.get('/api', (_req, res) => {
+  // 输出系统负载状态
+  res.json({
+    message: 'API is running',
+    uptime: process.uptime(),
+    loadavg: os.loadavg(), // 1, 5, 15分钟平均负载
+    totalmem: os.totalmem(),
+    freemem: os.freemem(),
+    platform: os.platform(),
+    arch: os.arch(),
+    cpus: os.cpus().length,
+    node_version: process.version,
+    cpu_usage: calcCpuUsage(),
+    time: new Date(),
+  })
 })
 
 app.use(errorLogger)

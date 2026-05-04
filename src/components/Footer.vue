@@ -56,14 +56,20 @@
             href="https://www.zyghit.cn" target="_blank">ZGIT Network</a>
         </p>
         <div class="build-info">
-          <svg class="git-icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512">
-            <path
-              d="M416 160a64 64 0 1 0-96.27 55.24c-2.29 29.08-20.08 37-75 48.42c-17.76 3.68-35.93 7.45-52.71 13.93v-126.2a64 64 0 1 0-64 0v209.22a64 64 0 1 0 64.42.24c2.39-18 16-24.33 65.26-34.52c27.43-5.67 55.78-11.54 79.78-26.95c29-18.58 44.53-46.78 46.36-83.89A64 64 0 0 0 416 160zM160 64a32 32 0 1 1-32 32a32 32 0 0 1 32-32zm0 384a32 32 0 1 1 32-32a32 32 0 0 1-32 32zm192-256a32 32 0 1 1 32-32a32 32 0 0 1-32 32z"
-              fill="currentColor"></path>
-          </svg>
-
-          <span>Build {{ gitHash }} - {{ formattedDate }}</span>
+          <div class="build-meta">
+            <svg class="git-icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg"
+              xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512">
+              <path
+                d="M416 160a64 64 0 1 0-96.27 55.24c-2.29 29.08-20.08 37-75 48.42c-17.76 3.68-35.93 7.45-52.71 13.93v-126.2a64 64 0 1 0-64 0v209.22a64 64 0 1 0 64.42.24c2.39-18 16-24.33 65.26-34.52c27.43-5.67 55.78-11.54 79.78-26.95c29-18.58 44.53-46.78 46.36-83.89A64 64 0 0 0 416 160zM160 64a32 32 0 1 1-32 32a32 32 0 0 1 32-32zm0 384a32 32 0 1 1 32-32a32 32 0 0 1-32 32zm192-256a32 32 0 1 1 32-32a32 32 0 0 1-32 32z"
+                fill="currentColor"></path>
+            </svg>
+            <span>Build {{ gitHash }} - {{ formattedDate }}</span>
+          </div>
+          <span v-if="systemInfo" class="load-meta">
+            系统负载 {{systemInfo.loadavg?.map((v: number) => v.toFixed(2)).join(' / ') || 'N/A'}} | CPU {{
+              systemInfo.cpu_usage }}% | Ram {{ memoryPercent }}% | Uptime {{ (systemInfo.uptime / 60 / 60).toFixed(2) }}
+            h
+          </span>
         </div>
       </div>
     </div>
@@ -71,7 +77,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+defineOptions({ name: 'AppFooter' });
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 
 const currentYear = new Date().getFullYear();
 
@@ -82,6 +89,38 @@ interface FriendLink {
 
 const friendLinks = ref<FriendLink[]>([]);
 
+interface SystemInfo {
+  loadavg: number[];
+  freemem: number;
+  totalmem: number;
+  cpus: number;
+  uptime: number;
+  cpu_usage: number;
+}
+
+const systemInfo = ref<SystemInfo | null>(null);
+
+const loadSystemInfo = async () => {
+  try {
+    const response = await fetch('/api');
+    if (response.ok) {
+      const data = await response.json();
+      systemInfo.value = {
+        loadavg: data.loadavg,
+        freemem: data.freemem,
+        totalmem: data.totalmem,
+        cpus: data.cpus,
+        uptime: data.uptime,
+        cpu_usage: data.cpu_usage,
+      };
+    }
+  } catch (error) {
+    console.error('Failed to fetch system info:', error);
+  }
+};
+
+let systemInfoInterval: ReturnType<typeof setInterval> | null = null;
+
 onMounted(async () => {
   try {
     const response = await fetch('/api/friend-Links');
@@ -91,6 +130,15 @@ onMounted(async () => {
     friendLinks.value = await response.json();
   } catch (error) {
     console.error('Failed to fetch friend links:', error);
+  }
+
+  await loadSystemInfo();
+  systemInfoInterval = setInterval(loadSystemInfo, 60000);
+});
+
+onUnmounted(() => {
+  if (systemInfoInterval) {
+    clearInterval(systemInfoInterval);
   }
 });
 
@@ -105,6 +153,11 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
   minute: '2-digit',
   second: '2-digit',
   hour12: false
+});
+
+const memoryPercent = computed(() => {
+  if (!systemInfo.value?.totalmem || !systemInfo.value?.freemem) return 0;
+  return Math.round(((systemInfo.value.totalmem - systemInfo.value.freemem) / systemInfo.value.totalmem) * 100);
 });
 </script>
 
@@ -242,12 +295,23 @@ const formattedDate = new Date(gitDate).toLocaleString('zh-CN', {
 
 .build-info {
   display: flex;
-  align-items: left;
+  flex-direction: column;
+  align-items: flex-end;
   justify-content: flex-end;
   font-size: 12px;
   color: #8b949e;
   text-align: right;
   flex-grow: 1;
+  gap: 0.25rem;
+}
+
+.build-meta {
+  display: flex;
+  align-items: center;
+}
+
+.load-meta {
+  display: block;
 }
 
 .git-icon {
@@ -284,8 +348,8 @@ a:hover {
   }
 
   .build-info {
-    justify-content: left;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
     width: 100%;
     margin-top: 0.5rem;
   }

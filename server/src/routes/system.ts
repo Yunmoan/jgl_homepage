@@ -43,6 +43,36 @@ const buildTime = new Date()
   .replace(/-/g, '/')
 const frontendVersion = frontendHash ? `Build ${frontendHash} - ${buildTime}` : null
 
+// CPU usage tracking: compare CPU ticks between samples
+let prevCpuInfo: ReturnType<typeof os.cpus> | null = null
+
+function calcCpuUsage(): number {
+  const currentCpuInfo = os.cpus()
+  if (!prevCpuInfo) {
+    prevCpuInfo = currentCpuInfo.map((cpu) => ({ ...cpu }))
+    return 0
+  }
+
+  let totalIdle = 0
+  let totalTick = 0
+
+  for (let i = 0; i < currentCpuInfo.length; i++) {
+    const prev = prevCpuInfo[i]
+    const curr = currentCpuInfo[i]
+    const prevTotal = Object.values(prev.times).reduce((a: number, b: number) => a + b, 0)
+    const currTotal = Object.values(curr.times).reduce((a: number, b: number) => a + b, 0)
+    const idleDiff = curr.times.idle - prev.times.idle
+    const totalDiff = currTotal - prevTotal
+    totalIdle += idleDiff
+    totalTick += totalDiff
+  }
+
+  prevCpuInfo = currentCpuInfo.map((cpu) => ({ ...cpu }))
+
+  if (totalTick === 0) return 0
+  return Math.round(((totalTick - totalIdle) / totalTick) * 100)
+}
+
 router.get('/info', (_req, res) => {
   res.json({
     backendVersion,
@@ -50,6 +80,11 @@ router.get('/info', (_req, res) => {
     node: process.version,
     platform: `${os.type()} ${os.release()}`,
     uptime: process.uptime(),
+    loadavg: os.loadavg(),
+    totalmem: os.totalmem(),
+    freemem: os.freemem(),
+    cpus: os.cpus().length,
+    cpu_usage: calcCpuUsage(),
   })
 })
 
