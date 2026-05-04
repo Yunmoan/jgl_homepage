@@ -167,26 +167,32 @@ router.post(
       await fs.mkdir(CIRCULAR_DIR, { recursive: true })
 
       const buffer = req.file.buffer
-      const size = 400
-      const diameter = size * 2
 
-      const processedBuffer = await sharp(buffer)
-        .resize(size, size, { fit: 'cover', position: 'center' })
-        .toBuffer()
+      // Get original image dimensions
+      const originalMeta = await sharp(buffer).metadata()
+      const origW = originalMeta.width || 100
+      const origH = originalMeta.height || 100
 
+      // Use the larger dimension to create a square canvas, then apply circular mask
+      const size = Math.max(origW, origH)
+      const diameter = size
+
+      // Create circular alpha mask centered on the original image
       const alpha = Buffer.alloc(diameter * diameter)
       for (let y = 0; y < diameter; y++) {
         for (let x = 0; x < diameter; x++) {
-          const cx = diameter / 2
-          const cy = diameter / 2
-          const r = size
+          const cx = (diameter - 1) / 2
+          const cy = (diameter - 1) / 2
+          const r = size / 2
           const dx = x - cx
           const dy = y - cy
           alpha[y * diameter + x] = dx * dx + dy * dy <= r * r ? 255 : 0
         }
       }
 
-      const withAlpha = await sharp(processedBuffer)
+      // Convert to WebP with circular alpha mask
+      const withAlpha = await sharp(buffer)
+        .resize(size, size, { fit: 'contain', position: 'center', background: { r: 0, g: 0, b: 0, alpha: 0 } })
         .joinChannel(alpha, { raw: { width: diameter, height: diameter, channels: 1 } })
         .webp({ quality: 80 })
         .toBuffer()
