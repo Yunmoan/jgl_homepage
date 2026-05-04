@@ -9,7 +9,7 @@ const router = Router()
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM history ORDER BY id ASC')
+    const [rows] = await pool.query('SELECT * FROM history ORDER BY id DESC')
     res.json(rows)
   } catch (error) {
     console.error('Error fetching history:', error)
