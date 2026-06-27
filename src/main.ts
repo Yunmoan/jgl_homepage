@@ -7,10 +7,25 @@ const app = createApp(App)
 
 app.use(router)
 
+router.afterEach((to) => {
+  fetch('/api/system/page-view', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      path: to.fullPath,
+      referrer: document.referrer || null,
+    }),
+    keepalive: true,
+  }).catch(() => undefined)
+})
+
+const recaptchaSiteKey =
+  import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6Lf9LSosAAAAACzIRoszgUmT_zlg1QyPZNkM7xn_'
+
 app.use(VueReCaptcha, {
-  siteKey: '6Lf9LSosAAAAACzIRoszgUmT_zlg1QyPZNkM7xn_', // This is a public test key
+  siteKey: recaptchaSiteKey,
   loaderOptions: {
-    useRecaptchaNet: true, // Use recaptcha.net
+    useRecaptchaNet: true,
   },
 })
 

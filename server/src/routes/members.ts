@@ -6,6 +6,7 @@ import multer from 'multer'
 import path from 'path'
 import fs from 'fs/promises'
 import sharp from 'sharp'
+import { cleanString, requiredString } from '../utils/input'
 
 const router = Router()
 
@@ -16,24 +17,28 @@ const router = Router()
 // @query   limit - Items per page (default: 18)
 router.get('/', async (req, res) => {
   try {
-    // Get pagination parameters from query string
     const page = Math.max(1, parseInt(req.query.page as string) || 1)
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 18)) // Max 100 items per page
-
-    // Calculate offset
+    const keyword = typeof req.query.keyword === 'string' ? req.query.keyword.trim() : ''
     const offset = (page - 1) * limit
+    const where = keyword ? 'WHERE m.name LIKE ? OR m.link LIKE ?' : ''
+    const keywordParams = keyword ? [`%${keyword}%`, `%${keyword}%`] : []
 
-    // Get total count of members
-    const [countResult] = await pool.query<RowDataPacket[]>('SELECT COUNT(*) as total FROM members')
+    const [countResult] = await pool.query<RowDataPacket[]>(
+      `SELECT COUNT(*) as total FROM members m ${where}`,
+      keywordParams,
+    )
     const total = countResult[0].total
 
-    // Get paginated members
-    const [rows] = await pool.query('SELECT * FROM members ORDER BY name ASC LIMIT ? OFFSET ?', [
-      limit,
-      offset,
-    ])
+    const [rows] = await pool.query(
+      `SELECT m.*, u.username AS owner_username, COALESCE(u.nickname, u.club_name, u.username) AS owner_label
+         FROM members m
+         LEFT JOIN users u ON u.id = m.owner_user_id
+         ${where}
+        ORDER BY m.name ASC LIMIT ? OFFSET ?`,
+      [...keywordParams, limit, offset],
+    )
 
-    // Calculate total pages
     const totalPages = Math.ceil(total / limit)
 
     // Return paginated response
@@ -58,17 +63,19 @@ router.get('/', async (req, res) => {
 // @desc    Create a member
 // @access  Private (Admin, Editor)
 router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
-  const { name, logo, link } = req.body
+  const { name, logo, link, ownerUserId } = req.body
+  const safeName = requiredString(name)
 
-  if (!name) {
+  if (!safeName) {
     return res.status(400).json({ error: 'Name is required' })
   }
 
   try {
-    const [result] = await pool.query('INSERT INTO members (name, logo, link) VALUES (?, ?, ?)', [
-      name,
-      logo,
-      link,
+    const [result] = await pool.query('INSERT INTO members (name, logo, link, owner_user_id) VALUES (?, ?, ?, ?)', [
+      safeName,
+      cleanString(logo),
+      cleanString(link),
+      ownerUserId || null,
     ])
     res
       .status(201)
@@ -82,18 +89,36 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
 // @route   PUT /api/members/:id
 // @desc    Update a member
 // @access  Private (Admin, Editor)
-router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
+router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: any, res) => {
   const { id } = req.params
-  const { name, logo, link } = req.body
+  const { name, logo, link, ownerUserId } = req.body
+  const safeName = requiredString(name)
 
-  if (!name) {
+  if (!safeName) {
     return res.status(400).json({ error: 'Name is required' })
   }
 
   try {
+    if (req.user?.role === 'member') {
+      const [ownedRows] = await pool.query(
+        'SELECT id FROM members WHERE id = ? AND owner_user_id = ? LIMIT 1',
+        [id, req.user.id],
+      )
+      if (!Array.isArray(ownedRows) || ownedRows.length === 0) {
+        return res.status(404).json({ error: 'Member not found or no permission' })
+      }
+    }
+
+    const adminFields = req.user?.role === 'admin' ? ', owner_user_id = ?' : ''
+    const params: unknown[] = [safeName, cleanString(logo), cleanString(link)]
+    if (req.user?.role === 'admin') {
+      params.push(ownerUserId || null)
+    }
+    params.push(id)
+
     const [result] = await pool.query(
-      'UPDATE members SET name = ?, logo = ?, link = ? WHERE id = ?',
-      [name, logo, link, id],
+      `UPDATE members SET name = ?, logo = ?, link = ?${adminFields} WHERE id = ?`,
+      params,
     )
 
     if ((result as any).affectedRows === 0) {
@@ -107,22 +132,22 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
   }
 })
 
-// @route   DELETE /api/members/:id
-// @desc    Delete a member
-// @access  Private (Admin)
-router.delete('/:id', protect, authorize('admin'), async (req, res) => {
-  const { id } = req.params
-
+// @route   GET /api/members/mine
+// @desc    Get member records owned by current account
+// @access  Private (Member)
+router.get('/mine', protect as any, authorize('member') as any, async (req: any, res) => {
   try {
-    const [result] = await pool.query('DELETE FROM members WHERE id = ?', [id])
-
-    if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Member not found' })
-    }
-
-    res.json({ message: 'Member deleted successfully' })
+    const [rows] = await pool.query(
+      `SELECT m.*, u.username AS owner_username, COALESCE(u.nickname, u.club_name, u.username) AS owner_label
+         FROM members m
+         LEFT JOIN users u ON u.id = m.owner_user_id
+        WHERE m.owner_user_id = ?
+        ORDER BY m.name ASC`,
+      [req.user.id],
+    )
+    res.json(rows)
   } catch (error) {
-    console.error('Error deleting member:', error)
+    console.error('Error fetching owned members:', error)
     res.status(500).json({ error: 'Internal Server Error' })
   }
 })
@@ -148,7 +173,7 @@ const CIRCULAR_DIR = path.join(__dirname, '../../uploads/member_logos_circular')
 router.post(
   '/upload-logo',
   protect as any,
-  authorize('admin', 'editor') as any,
+  authorize('admin', 'editor', 'member') as any,
   upload.single('image'),
   async (req: any, res) => {
     if (!req.file) {
@@ -229,6 +254,26 @@ router.delete('/logo', protect as any, authorize('admin', 'editor') as any, asyn
     }
     console.error('Error deleting logo:', error)
     res.status(500).json({ message: 'Failed to delete logo' })
+  }
+})
+
+// @route   DELETE /api/members/:id
+// @desc    Delete a member
+// @access  Private (Admin)
+router.delete('/:id', protect, authorize('admin'), async (req, res) => {
+  const { id } = req.params
+
+  try {
+    const [result] = await pool.query('DELETE FROM members WHERE id = ?', [id])
+
+    if ((result as any).affectedRows === 0) {
+      return res.status(404).json({ error: 'Member not found' })
+    }
+
+    res.json({ message: 'Member deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting member:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
   }
 })
 

@@ -17,10 +17,12 @@ const ALLOWED_TYPES = [
   'admins',
   'members',
   'friend_links',
+  'application_logos',
 ] as const
 const ALLOWED_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.svg']
 const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
+const PUBLIC_UPLOAD_TYPES = ['application_logos'] as const
 // ==============================================
 
 const uploadBaseDir = path.join(__dirname, '../../uploads/')
@@ -46,18 +48,6 @@ const storage = multer.diskStorage({
   },
 })
 
-const upload = multer({
-  storage,
-  limits: { fileSize: MAX_FILE_SIZE },
-  fileFilter: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase()
-    if (!ALLOWED_EXTS.includes(ext) || !ALLOWED_MIME.includes(file.mimetype)) {
-      return cb(new Error('Unsupported file type'))
-    }
-    cb(null, true)
-  },
-})
-
 // Multer v2 emits errors on the request object via upload.errorFormatter or by default middleware
 // We handle multer errors before accessing req.file
 const handleMulterError = (
@@ -65,8 +55,6 @@ const handleMulterError = (
   res: express.Response,
   next: express.NextFunction,
 ) => {
-  const typeParam = (req.query.type as string) || 'general'
-  const type = ALLOWED_TYPES.includes(typeParam as any) ? typeParam : 'general'
   const maxSize = MAX_FILE_SIZE
 
   const upload = multer({
@@ -101,23 +89,54 @@ const handleMulterError = (
   })
 }
 
+const requireUploadType = (allowedTypes: readonly string[], defaultType: string) => {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const type = (req.query.type as string) || defaultType
+    if (!ALLOWED_TYPES.includes(type as any)) {
+      return res.status(400).json({ message: 'Invalid upload type.' })
+    }
+    if (!allowedTypes.includes(type)) {
+      return res.status(403).json({ message: 'Forbidden upload type.' })
+    }
+    next()
+  }
+}
+
+router.post('/public', requireUploadType(PUBLIC_UPLOAD_TYPES, 'application_logos'), handleMulterError, (req: any, res) => {
+  const type = (req.query.type as string) || 'application_logos'
+  if (!req.file) {
+    return res.status(400).json({ message: 'Please upload a file' })
+  }
+
+  res.json({
+    message: 'File uploaded successfully',
+    filePath: `/uploads/${type}/${req.file.filename}`,
+  })
+})
+
 // 仅登录用户可上传；且角色限制：member 只能上传到 works/news 目录；admin/editor 不限制
 router.post(
   '/',
   protect as any,
   authorize('admin', 'editor', 'member') as any,
+  (req: any, res, next) => {
+    const type = (req.query.type as string) || 'general'
+    if (!ALLOWED_TYPES.includes(type as any)) {
+      return res.status(400).json({ message: 'Invalid upload type.' })
+    }
+    if (req.user?.role === 'member' && !['works', 'news'].includes(type)) {
+      return res
+        .status(403)
+        .json({ message: 'Forbidden: members can only upload for works or news' })
+    }
+    next()
+  },
   handleMulterError,
   (req: any, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'Please upload a file' })
     }
     const type = (req.query.type as string) || 'general'
-
-    if (req.user?.role === 'member' && !['works', 'news'].includes(type)) {
-      return res
-        .status(403)
-        .json({ message: 'Forbidden: members can only upload for works or news' })
-    }
 
     const filePath = `/uploads/${type}/${req.file.filename}`
     console.log(`[DEBUG] Upload: file written to=${req.file.path}, serving from=/uploads/${type}/, staticRoot=${require('path').join(__dirname,'../uploads')}`)

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import pool from '../db'
 import cache from '../cache'
 import { protect, authorize, optionalAuth } from '../middleware/auth'
+import { isOneOf, parseStoredTags, singleTagJson, toMysqlDatetime } from '../utils/input'
 
 const router = Router()
 
@@ -10,20 +11,10 @@ const router = Router()
 // @access  Public (token optional)
 router.get('/', optionalAuth as any, async (req: any, res) => {
   try {
-    const parseTags = (rows: any[]) =>
+    const mapNewsRows = (rows: any[]) =>
       rows.map((r) => ({
         ...r,
-        tags: (() => {
-          const t = (r as any).tags
-          if (Array.isArray(t)) return t.slice(0, 1)
-          if (!t) return []
-          try {
-            const parsed = JSON.parse(t)
-            return Array.isArray(parsed) ? parsed.slice(0, 1) : []
-          } catch {
-            return []
-          }
-        })(),
+        tags: parseStoredTags((r as any).tags),
       }))
 
     const user = req.user
@@ -32,7 +23,7 @@ router.get('/', optionalAuth as any, async (req: any, res) => {
         'SELECT n.*, COALESCE(u.nickname,u.username) AS submitter FROM news n LEFT JOIN users u ON u.id = n.user_id WHERE n.user_id = ? ORDER BY n.date DESC',
         [user.id],
       )
-      return res.json(parseTags(rows as any[]))
+      return res.json(mapNewsRows(rows as any[]))
     }
 
     // Public or admin
@@ -43,7 +34,7 @@ router.get('/', optionalAuth as any, async (req: any, res) => {
       const [rows] = await pool.query(
         "SELECT n.*, u.username AS submitter FROM news n LEFT JOIN users u ON u.id = n.user_id WHERE n.status = 'approved' ORDER BY n.date DESC",
       )
-      const parsed = parseTags(rows as any[])
+      const parsed = mapNewsRows(rows as any[])
       cache.set(cacheKey, parsed)
       return res.json(parsed)
     } else {
@@ -51,7 +42,7 @@ router.get('/', optionalAuth as any, async (req: any, res) => {
       const [rows] = await pool.query(
         'SELECT n.*, COALESCE(u.nickname,u.username) AS submitter FROM news n LEFT JOIN users u ON u.id = n.user_id ORDER BY n.date DESC',
       )
-      return res.json(parseTags(rows as any[]))
+      return res.json(mapNewsRows(rows as any[]))
     }
   } catch (error) {
     console.error('Error fetching news:', error)
@@ -69,39 +60,11 @@ router.post('/', protect, authorize('admin', 'editor', 'member'), async (req: an
     return res.status(400).json({ error: 'Title, content, and date are required' })
   }
 
-  // Normalize date to MySQL DATETIME format
-  const toMysqlDatetime = (input: string) => {
-    const d = new Date(input)
-    if (isNaN(d.getTime())) return input
-    const pad = (n: number) => String(n).padStart(2, '0')
-    const yyyy = d.getFullYear()
-    const mm = pad(d.getMonth() + 1)
-    const dd = pad(d.getDate())
-    const hh = pad(d.getHours())
-    const mi = pad(d.getMinutes())
-    const ss = pad(d.getSeconds())
-    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
-  }
   const dateNormalized = toMysqlDatetime(date)
-  const parseTagsOnce = (t: any) => {
-    let arr: any[] = []
-    if (Array.isArray(t)) arr = t
-    else if (typeof t === 'string' && t.trim()) {
-      try {
-        const parsed = JSON.parse(t)
-        if (Array.isArray(parsed)) arr = parsed
-        else arr = [String(parsed)]
-      } catch {
-        arr = t.split(',')
-      }
-    }
-    return arr.map((s) => String(s).trim()).filter(Boolean)
-  }
-  const rawTags = parseTagsOnce(tags)
-  if (rawTags.length > 1) {
+  const tagsJson = singleTagJson(tags)
+  if (tagsJson === null) {
     return res.status(400).json({ error: '一个新闻最多只允许一个标签' })
   }
-  const tagsJson = JSON.stringify(rawTags.slice(0, 1))
 
   try {
     const userId = req.user?.id ?? null
@@ -134,40 +97,11 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
     return res.status(400).json({ error: 'Title, content, and date are required' })
   }
 
-  // Normalize date to MySQL DATETIME format
-  const toMysqlDatetime = (input: string) => {
-    const d = new Date(input)
-    if (isNaN(d.getTime())) return input
-    const pad = (n: number) => String(n).padStart(2, '0')
-    const yyyy = d.getFullYear()
-    const mm = pad(d.getMonth() + 1)
-    const dd = pad(d.getDate())
-    const hh = pad(d.getHours())
-    const mi = pad(d.getMinutes())
-    const ss = pad(d.getSeconds())
-    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
-  }
   const dateNormalized = toMysqlDatetime(date)
-
-  const parseTagsOnce = (t: any) => {
-    let arr: any[] = []
-    if (Array.isArray(t)) arr = t
-    else if (typeof t === 'string' && t.trim()) {
-      try {
-        const parsed = JSON.parse(t)
-        if (Array.isArray(parsed)) arr = parsed
-        else arr = [String(parsed)]
-      } catch {
-        arr = t.split(',')
-      }
-    }
-    return arr.map((s) => String(s).trim()).filter(Boolean)
-  }
-  const rawTags = parseTagsOnce(tags)
-  if (rawTags.length > 1) {
+  const tagsJson = singleTagJson(tags)
+  if (tagsJson === null) {
     return res.status(400).json({ error: '一个新闻最多只允许一个标签' })
   }
-  const tagsJson = JSON.stringify(rawTags.slice(0, 1))
 
   try {
     let sql =
@@ -221,7 +155,7 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
 router.put('/:id/status', protect, authorize('admin'), async (req, res) => {
   const { id } = req.params as { id: string }
   const { status } = req.body as { status?: 'approved' | 'rejected' | 'pending' }
-  if (!status || !['approved', 'rejected', 'pending'].includes(status)) {
+  if (!isOneOf(status, ['approved', 'rejected', 'pending'] as const)) {
     return res.status(400).json({ error: 'Invalid status' })
   }
   try {

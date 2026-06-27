@@ -180,7 +180,7 @@ async function seed() {
 
     // Seed a default admin user
     const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash('password', salt)
+    const hashedPassword = await bcrypt.hash('admin123', salt)
     await connection.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [
       'admin',
       hashedPassword,

@@ -3,6 +3,10 @@ import path from 'path'
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') })
 
+if (!process.env.JWT_SECRET) {
+  console.warn('[config] JWT_SECRET is not set, using a dev-only fallback secret')
+}
+
 const config = {
   db: {
     host: process.env.DB_HOST || 'localhost',
@@ -14,7 +18,7 @@ const config = {
     port: process.env.PORT || 3000,
   },
   jwt: {
-    secret: process.env.JWT_SECRET || 'your_default_secret_key',
+    secret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
   },
   recaptcha: {
     secretKey: process.env.RECAPTCHA_SECRET_KEY,

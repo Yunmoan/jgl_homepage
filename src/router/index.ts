@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../pages/HomeView.vue'
+import ClubApplyView from '../views/ClubApplyView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,6 +33,11 @@ const router = createRouter({
       path: '/news',
       name: 'news',
       component: () => import('../pages/NewsPage.vue'),
+    },
+    {
+      path: '/club-apply',
+      name: 'club-apply',
+      component: ClubApplyView,
     },
     {
       path: '/:pathMatch(.*)*',

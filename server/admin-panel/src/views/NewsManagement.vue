@@ -1,137 +1,251 @@
 <template>
-  <div>
-    <div class="controls">
-      <h1>新闻管理</h1>
-      <el-button type="primary" @click="handleCreate">创建新闻</el-button>
+  <div class="admin-page">
+    <div class="page-header">
+      <div class="page-title">
+        <h1>新闻管理</h1>
+        <p>管理官网新闻、社团投稿和审核状态，支持封面、标签与正文图片。</p>
+      </div>
+      <div class="page-actions">
+        <el-button :icon="Refresh" :loading="loading" @click="fetchNews">刷新</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新建文章</el-button>
+      </div>
     </div>
 
-    <el-table :data="tableData" v-loading="loading" style="width: 100%">
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="title" label="标题" />
-      <el-table-column prop="author" label="作者" width="150" />
-      <el-table-column prop="date" label="日期" width="200" />
-      <el-table-column prop="tags" label="标签" width="220">
-        <template #default="scope">
-          <el-tag v-for="t in (scope.row.tags || [])" :key="t" type="info" size="small"
-            style="margin-right:4px;margin-bottom:4px;">{{ t }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="submitter" label="提交人" width="160" />
-      <el-table-column prop="status" label="状态" width="140">
-        <template #default="scope">
-          <el-tag :type="statusType(scope.row.status)">{{ scope.row.status || '—' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="320">
-        <template #default="scope">
-          <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
-          <template v-if="isAdmin">
-            <el-button size="small" type="success" @click="handleSetStatus(scope.row, 'approved')"
-              :disabled="scope.row.status === 'approved'">通过</el-button>
-            <el-button size="small" type="warning" @click="handleSetStatus(scope.row, 'rejected')"
-              :disabled="scope.row.status === 'rejected'">驳回</el-button>
-          </template>
-        </template>
-      </el-table-column>
-    </el-table>
+    <el-card class="table-card" shadow="never">
+      <div class="filter-bar">
+        <el-input
+          v-model="keyword"
+          clearable
+          :prefix-icon="Search"
+          placeholder="搜索标题、作者、摘要、提交人"
+          style="width: 280px"
+        />
+        <el-select v-model="statusFilter" placeholder="状态" style="width: 140px">
+          <el-option label="全部状态" value="all" />
+          <el-option label="待审" value="pending" />
+          <el-option label="已通过" value="approved" />
+          <el-option label="已驳回" value="rejected" />
+        </el-select>
+        <el-select v-model="tagFilter" clearable placeholder="标签" style="width: 160px">
+          <el-option label="全部标签" value="all" />
+          <el-option v-for="tag in tagOptions" :key="tag" :label="tag" :value="tag" />
+        </el-select>
+        <span class="filter-count">共 {{ filteredData.length }} 条，待审 {{ pendingCount }} 条</span>
+      </div>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="80%">
-      <el-form :model="form" label-width="100px">
-        <el-form-item label="标题">
-          <el-input v-model="form.title" />
-        </el-form-item>
-        <el-form-item label="作者">
-          <el-input v-model="form.author" />
-        </el-form-item>
-        <el-form-item label="日期">
-          <el-date-picker v-model="form.date" type="datetime" placeholder="选择日期时间" format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss" />
-        </el-form-item>
-        <el-form-item label="标签">
-          <el-select v-model="form.tags" multiple :multiple-limit="1" filterable allow-create default-first-option
-            placeholder="仅允许选择1个标签（输入后回车创建）">
-            <el-option v-for="opt in tagOptions" :key="opt" :label="opt" :value="opt" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="图片">
-          <el-upload class="image-uploader" action="/api/upload?type=news" name="image" :headers="uploadHeaders"
-            :show-file-list="false" :on-success="handleImageSuccess" :before-upload="beforeImageUpload">
-            <img v-if="form.image" :src="form.image" class="image" />
-            <el-icon v-else class="image-uploader-icon">
-              <Plus />
-            </el-icon>
-          </el-upload>
-        </el-form-item>
-        <el-form-item label="摘要">
-          <el-input v-model="form.summary" type="textarea" />
-        </el-form-item>
-        <el-form-item label="内容">
-          <div style="margin-bottom: 8px; display:flex; align-items:center; gap:10px;">
-            <el-upload action="/api/upload?type=news" name="image" :headers="uploadHeaders" :show-file-list="false"
-              :before-upload="beforeImageUpload" :on-success="handleEditorImageSuccess" multiple>
-              <el-button type="primary">上传图片</el-button>
-            </el-upload>
-            <span style="color: var(--muted-text); font-size: 12px;">支持 Ctrl+V 粘贴、拖拽 或 点击上传，图片将自动插入内容；不建议粘贴 data:base64
-              链接</span>
+      <el-table :data="pagedData" v-loading="loading" border height="calc(100vh - 320px)">
+        <el-table-column prop="id" label="ID" width="76" />
+        <el-table-column label="标题" min-width="280">
+          <template #default="{ row }">
+            <div class="table-title-cell">
+              <strong>{{ row.title }}</strong>
+              <span>{{ row.summary || '暂无摘要' }}</span>
+              <div v-if="row.tags.length" class="tag-row">
+                <el-tag v-for="tag in row.tags" :key="tag" size="small" effect="plain">{{ tag }}</el-tag>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="author" label="作者" min-width="120" />
+        <el-table-column prop="submitter" label="提交人" min-width="120" />
+        <el-table-column prop="date" label="发布时间" min-width="170" />
+        <el-table-column prop="status" label="状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="statusTag(row.status)" effect="plain">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="340" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" :icon="Edit" @click="openEdit(row)">编辑</el-button>
+            <el-button
+              v-if="isAdmin"
+              size="small"
+              type="success"
+              plain
+              :disabled="row.status === 'approved'"
+              @click="updateStatus(row.id, 'approved')"
+            >
+              通过
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              size="small"
+              type="warning"
+              plain
+              :disabled="row.status === 'rejected'"
+              @click="updateStatus(row.id, 'rejected')"
+            >
+              驳回
+            </el-button>
+            <el-button v-if="isAdmin" size="small" type="danger" plain :icon="Delete" @click="handleDelete(row.id)">
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="没有符合条件的文章" />
+        </template>
+      </el-table>
+
+      <div class="table-footer">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 30, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="filteredData.length"
+          @size-change="currentPage = 1"
+        />
+      </div>
+    </el-card>
+
+    <el-drawer v-model="dialogVisible" :title="dialogTitle" size="min(1240px, 96vw)" class="article-editor-drawer">
+      <el-form :model="form" label-width="92px">
+        <div class="editor-grid">
+          <div class="editor-main">
+            <el-form-item label="标题">
+              <el-input v-model="form.title" maxlength="120" show-word-limit />
+            </el-form-item>
+            <el-form-item label="发布时间">
+              <el-date-picker
+                v-model="form.date"
+                type="datetime"
+                placeholder="选择发布时间"
+                format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+            <el-form-item label="作者">
+              <el-input v-model="form.author" maxlength="60" show-word-limit />
+            </el-form-item>
+            <el-form-item label="标签">
+              <el-select
+                v-model="form.tags"
+                multiple
+                :multiple-limit="1"
+                filterable
+                allow-create
+                default-first-option
+                placeholder="输入或选择一个标签"
+                style="width: 100%"
+              >
+                <el-option v-for="tag in tagOptions" :key="tag" :label="tag" :value="tag" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="摘要">
+              <el-input v-model="form.summary" type="textarea" :rows="3" maxlength="240" show-word-limit />
+            </el-form-item>
+            <el-form-item label="正文">
+              <div class="editor-toolbar">
+                <el-upload
+                  action="/api/upload?type=news"
+                  name="image"
+                  :headers="uploadHeaders"
+                  :show-file-list="false"
+                  :before-upload="beforeImageUpload"
+                  :on-success="handleEditorImageSuccess"
+                  multiple
+                >
+                  <el-button :icon="Upload">上传图片</el-button>
+                </el-upload>
+                <span class="dialog-tip">支持粘贴、拖拽和按钮上传，保存时会自动处理正文中的 base64 图片。</span>
+              </div>
+              <v-md-editor
+                ref="editorRef"
+                v-model="form.content"
+                height="480px"
+                :on-upload-img="handleEditorUpload"
+              />
+            </el-form-item>
           </div>
-          <v-md-editor ref="editorRef" v-model="form.content" height="400px"
-            :on-upload-img="handleEditorUpload"></v-md-editor>
-        </el-form-item>
+
+          <div class="editor-side">
+            <el-form-item label="封面">
+              <el-upload
+                class="cover-uploader"
+                action="/api/upload?type=news"
+                name="image"
+                :headers="uploadHeaders"
+                :show-file-list="false"
+                :on-success="handleCoverSuccess"
+                :before-upload="beforeImageUpload"
+              >
+                <img v-if="form.image" :src="form.image" class="cover-image" alt="" />
+                <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
+              </el-upload>
+            </el-form-item>
+
+            <el-alert
+              title="编辑提示"
+              type="info"
+              :closable="false"
+              show-icon
+              description="后台允许管理员直接通过或驳回文章；非管理员只能编辑自己提交的内容。"
+            />
+          </div>
+        </div>
       </el-form>
+
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSave">保存</el-button>
-        </span>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="saveArticle">保存</el-button>
       </template>
-    </el-dialog>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed } from 'vue';
-import apiClient from '@/api';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
-import type { UploadProps } from 'element-plus';
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, Edit, Plus, Refresh, Search, Upload } from '@element-plus/icons-vue'
+import type { UploadProps } from 'element-plus'
+import apiClient from '@/api'
 
-function parseJwtRole(): string | null {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return payload?.role ?? null;
-  } catch {
-    return null;
-  }
-}
+type NewsStatus = 'pending' | 'approved' | 'rejected'
+type StatusFilter = NewsStatus | 'all'
 
 interface NewsArticle {
-  id: number;
-  title: string;
-  date: string;
-  author: string;
-  image: string;
-  summary: string;
-  content: string;
-  submitter?: string;
-  status?: 'pending' | 'approved' | 'rejected';
-  tags?: string[];
+  id: number
+  title: string
+  date: string
+  author: string
+  image: string
+  summary: string
+  content: string
+  submitter?: string
+  status?: NewsStatus
+  tags?: string[] | string | null
 }
 
-const tableData = ref<NewsArticle[]>([]);
-const loading = ref(true);
-const dialogVisible = ref(false);
-const isEditMode = ref(false);
+interface EditorArticle {
+  id?: number
+  title: string
+  date: string
+  author: string
+  image: string
+  summary: string
+  content: string
+  tags: string[]
+}
 
-const isAdmin = computed(() => parseJwtRole() === 'admin');
+const tableData = ref<Required<Pick<NewsArticle, 'id' | 'title' | 'date' | 'author' | 'image' | 'summary' | 'content'>> & {
+  submitter?: string
+  status: NewsStatus
+  tags: string[]
+}[]>([])
+const loading = ref(false)
+const saving = ref(false)
+const dialogVisible = ref(false)
+const isEditMode = ref(false)
+const keyword = ref('')
+const statusFilter = ref<StatusFilter>('all')
+const tagFilter = ref('all')
+const currentPage = ref(1)
+const pageSize = ref(10)
+const me = ref<{ username: string; nickname?: string; role?: string } | null>(null)
+const editorRef = ref()
 
-const editorRef = ref();
-
-const form = reactive<Partial<NewsArticle>>({
+const form = reactive<EditorArticle>({
   id: undefined,
   title: '',
   date: '',
@@ -140,314 +254,380 @@ const form = reactive<Partial<NewsArticle>>({
   summary: '',
   content: '',
   tags: [],
-});
+})
 
-const dialogTitle = computed(() => (isEditMode.value ? '编辑新闻' : '创建新闻'));
-
+const isAdmin = computed(() => me.value?.role === 'admin')
+const dialogTitle = computed(() => (isEditMode.value ? '编辑文章' : '新建文章'))
 const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-});
+  const token = localStorage.getItem('token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+})
 
-const fetchNews = async () => {
-  loading.value = true;
-  try {
-    const response = await apiClient.get('/news');
-    tableData.value = (response.data || []).map((r: any) => ({
-      ...r,
-      tags: Array.isArray(r.tags) ? r.tags : [],
-    }));
-  } catch (error) {
-    ElMessage.error('获取新闻列表失败');
-    console.error('Failed to fetch news:', error);
-  } finally {
-    loading.value = false;
+const normalizeTags = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).slice(0, 1)
   }
-};
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value)
+      return normalizeTags(parsed)
+    } catch {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 1)
+    }
+  }
+  return []
+}
 
-const me = ref<{ id: number; username: string; role: string; nickname?: string } | null>(null);
+const tagOptions = computed(() => {
+  const set = new Set<string>()
+  tableData.value.forEach((row) => row.tags.forEach((tag) => set.add(tag)))
+  return Array.from(set).sort()
+})
+
+const pendingCount = computed(() => tableData.value.filter((item) => item.status === 'pending').length)
+
+const filteredData = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  return tableData.value.filter((item) => {
+    const hitKeyword =
+      !kw ||
+      [item.title, item.author, item.summary, item.submitter]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(kw))
+    const hitStatus = statusFilter.value === 'all' || item.status === statusFilter.value
+    const hitTag = tagFilter.value === 'all' || item.tags.includes(tagFilter.value)
+    return hitKeyword && hitStatus && hitTag
+  })
+})
+
+const pagedData = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredData.value.slice(start, start + pageSize.value)
+})
+
+watch([keyword, statusFilter, tagFilter], () => {
+  currentPage.value = 1
+})
+
 const fetchMe = async () => {
   try {
-    const res = await apiClient.get('/users/me');
-    me.value = res.data;
-  } catch (e) {
-    // 忽略未登录等异常（理论上管理台已登录）
-    me.value = null;
+    const { data } = await apiClient.get('/users/me')
+    me.value = data
+  } catch {
+    me.value = null
   }
-};
+}
 
-onMounted(() => {
-  fetchMe();
-  fetchNews();
-});
-
-const tagOptions = computed<string[]>(() => {
-  const set = new Set<string>();
-  for (const r of tableData.value) {
-    (r.tags || []).forEach((t: string) => set.add(t));
+const fetchNews = async () => {
+  loading.value = true
+  try {
+    const { data } = await apiClient.get('/news')
+    tableData.value = (data || []).map((row: NewsArticle) => ({
+      id: row.id,
+      title: row.title,
+      date: row.date,
+      author: row.author,
+      image: row.image,
+      summary: row.summary,
+      content: row.content,
+      submitter: row.submitter,
+      status: (row.status || 'approved') as NewsStatus,
+      tags: normalizeTags(row.tags),
+    }))
+  } catch (error) {
+    console.error('Failed to fetch news:', error)
+    ElMessage.error('获取文章列表失败')
+  } finally {
+    loading.value = false
   }
-  return Array.from(set);
-});
+}
+
+onMounted(async () => {
+  await Promise.all([fetchMe(), fetchNews()])
+})
 
 const resetForm = () => {
-  const authorDefault = me.value?.nickname || me.value?.username || '';
   Object.assign(form, {
     id: undefined,
     title: '',
     date: new Date().toISOString().slice(0, 19).replace('T', ' '),
-    author: authorDefault,
+    author: me.value?.nickname || me.value?.username || '',
     image: '',
     summary: '',
     content: '',
     tags: [],
-  });
-};
+  })
+}
 
-const handleCreate = () => {
-  resetForm();
-  isEditMode.value = false;
-  dialogVisible.value = true;
-};
+const openCreate = () => {
+  resetForm()
+  isEditMode.value = false
+  dialogVisible.value = true
+}
 
-const handleEdit = (row: NewsArticle) => {
-  Object.assign(form, row);
-  form.tags = Array.isArray(row.tags) ? [...row.tags] : [];
-  isEditMode.value = true;
-  dialogVisible.value = true;
-};
-
-const handleImageSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
-  form.image = response.filePath;
-  ElMessage.success('图片上传成功');
-};
+const openEdit = (row: (typeof tableData.value)[number]) => {
+  Object.assign(form, {
+    id: row.id,
+    title: row.title,
+    date: row.date,
+    author: row.author,
+    image: row.image,
+    summary: row.summary,
+    content: row.content,
+    tags: [...row.tags],
+  })
+  isEditMode.value = true
+  dialogVisible.value = true
+}
 
 const beforeImageUpload: UploadProps['beforeUpload'] = (rawFile) => {
-  const isJpgOrPngOrWebp = ['image/jpeg', 'image/png', 'image/webp'].includes(rawFile.type);
-  const isLt2M = rawFile.size / 1024 / 1024 < 2;
+  const isAllowed = ['image/jpeg', 'image/png', 'image/webp'].includes(rawFile.type)
+  const isLt2M = rawFile.size / 1024 / 1024 < 2
 
-  if (!isJpgOrPngOrWebp) {
-    ElMessage.error('上传的图片只能是 JPG, PNG, 或 WEBP 格式!');
-    return false;
+  if (!isAllowed) {
+    ElMessage.error('图片只支持 JPG、PNG、WEBP')
+    return false
   }
   if (!isLt2M) {
-    ElMessage.error('上传的图片大小不能超过 2MB!');
-    return false;
+    ElMessage.error('图片大小不能超过 2MB')
+    return false
   }
-  return true;
-};
+  return true
+}
 
-// 工具栏“上传图片”按钮回调（插入 Markdown 图片到内容）
-const handleEditorImageSuccess: UploadProps['onSuccess'] = (response) => {
-  const url = response?.filePath;
-  if (!url) return;
-  const md = `\n\n![](${url})\n\n`;
-  form.content = (form.content || '') + md;
-  ElMessage.success('图片已上传并插入内容');
-};
+const handleCoverSuccess: UploadProps['onSuccess'] = (response: any) => {
+  form.image = response?.filePath || ''
+  ElMessage.success('封面上传成功')
+}
 
-// 将内容中的 data:image/base64 图片提取上传并替换为 /uploads 链接
-const replaceInlineBase64 = async (content: string): Promise<string> => {
-  const dataUris: string[] = [];
+const handleEditorImageSuccess: UploadProps['onSuccess'] = (response: any) => {
+  const url = response?.filePath
+  if (!url) return
+  form.content = `${form.content || ''}\n\n![](${url})\n`
+  ElMessage.success('图片已插入正文')
+}
 
-  // Markdown 语法中的 data URI
-  const mdRegex = /!\[[^\]]*\]\((data:image\/[^)]+)\)/g;
-  let m: RegExpExecArray | null;
-  while ((m = mdRegex.exec(content)) !== null) {
-    dataUris.push(m[1]);
+const handleEditorUpload = async (files: File[], callback: (urls: string[]) => void) => {
+  const urls: string[] = []
+  for (const file of files) {
+    if (!beforeImageUpload(file as any)) continue
+    const fd = new FormData()
+    fd.append('image', file)
+    const res = await apiClient.post('/upload?type=news', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    if (res.data?.filePath) {
+      urls.push(res.data.filePath)
+    }
   }
+  callback(urls)
+}
 
-  // HTML img 标签中的 data URI
-  const htmlRegex = /<img[^>]+src=["'](data:image\/[^"]+)["'][^>]*>/g;
-  let h: RegExpExecArray | null;
-  while ((h = htmlRegex.exec(content)) !== null) {
-    dataUris.push(h[1]);
-  }
+const uploadInlineImages = async (content: string): Promise<string> => {
+  const matches: string[] = []
+  const mdRegex = /!\[[^\]]*\]\((data:image\/[^)]+)\)/g
+  const htmlRegex = /<img[^>]+src=["'](data:image\/[^"']+)["'][^>]*>/g
 
-  if (!dataUris.length) return content;
+  let match: RegExpExecArray | null
+  while ((match = mdRegex.exec(content)) !== null) matches.push(match[1])
+  while ((match = htmlRegex.exec(content)) !== null) matches.push(match[1])
+
+  if (!matches.length) return content
 
   const uploads = await Promise.all(
-    dataUris.map(async (uri) => {
+    matches.map(async (uri) => {
       try {
-        // 将 dataURI 转为 Blob
-        const arr = uri.split(',');
-        const mime = arr[0].match(/data:(.*?);base64/)?.[1] || 'image/png';
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) u8arr[n] = bstr.charCodeAt(n);
-        const blob = new Blob([u8arr], { type: mime });
-
-        const fd = new FormData();
-        fd.append('image', blob, `inline-${Date.now()}.png`);
+        const [head, data] = uri.split(',')
+        const mime = head.match(/data:(.*?);base64/)?.[1] || 'image/png'
+        const bin = atob(data)
+        const bytes = new Uint8Array(bin.length)
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+        const blob = new Blob([bytes], { type: mime })
+        const fd = new FormData()
+        fd.append('image', blob, `inline-${Date.now()}.png`)
         const res = await apiClient.post('/upload?type=news', fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        return { from: uri, to: res.data?.filePath as string };
-      } catch (e) {
-        console.error('Upload inline image failed:', e);
-        return { from: uri, to: '' };
+        })
+        return { from: uri, to: res.data?.filePath as string }
+      } catch {
+        return { from: uri, to: '' }
       }
-    })
-  );
+    }),
+  )
 
-  let replaced = content;
-  for (const u of uploads) {
-    if (u.to) {
-      const esc = u.from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      replaced = replaced.replace(new RegExp(esc, 'g'), u.to);
-    }
+  let output = content
+  uploads.forEach((item) => {
+    if (!item.to) return
+    const escaped = item.from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    output = output.replace(new RegExp(escaped, 'g'), item.to)
+  })
+  return output
+}
+
+const saveArticle = async () => {
+  if (!form.title || !form.date || !form.content) {
+    ElMessage.error('请填写标题、发布时间和正文')
+    return
   }
-  return replaced;
-};
-
-// v-md-editor 粘贴/拖拽 上传图片回调
-const handleEditorUpload = async (files: File[], callback: (urls: string[]) => void) => {
+  saving.value = true
   try {
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    const maxSizeMB = 2;
-    const validFiles = files.filter((f) => {
-      const okType = validTypes.includes(f.type);
-      const okSize = f.size / 1024 / 1024 < maxSizeMB;
-      if (!okType) ElMessage.error('粘贴/上传的图片只能是 JPG, PNG, 或 WEBP 格式!');
-      if (!okSize) ElMessage.error('粘贴/上传的图片大小不能超过 2MB!');
-      return okType && okSize;
-    });
-    if (!validFiles.length) return;
-
-    const uploads = validFiles.map((file) => {
-      const fd = new FormData();
-      fd.append('image', file);
-      return apiClient.post('/upload?type=news', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-    });
-
-    const responses = await Promise.all(uploads);
-    const urls = responses
-      .map((res) => res.data?.filePath)
-      .filter((u: string | undefined): u is string => Boolean(u));
-    if (urls.length) {
-      callback(urls);
-      // 冗余插入：部分版本不会主动插入，做兜底
-      const md = urls.map((u) => `\n\n![](${u})\n\n`).join('');
-      form.content = (form.content || '') + md;
-      ElMessage.success('图片已上传并插入内容');
+    const content = await uploadInlineImages(form.content)
+    const payload = {
+      title: form.title,
+      date: form.date,
+      author: form.author || me.value?.nickname || me.value?.username || '',
+      image: form.image,
+      summary: form.summary,
+      content,
+      tags: form.tags.slice(0, 1),
     }
-  } catch (e) {
-    console.error('Editor image upload failed:', e);
-    ElMessage.error('图片上传失败');
-  }
-};
 
-const normalizeDateForSave = (input: any) => {
-  if (!input) return '';
-  // 如果已经是 "YYYY-MM-DD HH:mm:ss" 形式直接返回
-  if (typeof input === 'string' && input.includes('-') && input.includes(':') && !input.includes('T')) return input;
-  const d = new Date(input);
-  if (isNaN(d.getTime())) return typeof input === 'string' ? input : '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  const ss = pad(d.getSeconds());
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
-};
-
-const handleSave = async () => {
-  try {
-    // 提交前，将正文中的 base64 data 图片替换为已上传的 /uploads 链接，避免数据库长度或大小限制导致 500
-    if (form.content) {
-      form.content = await replaceInlineBase64(form.content as string);
-    }
-    const payload = { ...form, date: normalizeDateForSave(form.date) };
-
-    if (isEditMode.value) {
-      await apiClient.put(`/news/${form.id}`, payload);
-      ElMessage.success('更新成功');
+    if (isEditMode.value && form.id) {
+      await apiClient.put(`/news/${form.id}`, payload)
+      ElMessage.success('文章已更新')
     } else {
-      await apiClient.post('/news', payload);
-      ElMessage.success('创建成功');
+      await apiClient.post('/news', payload)
+      ElMessage.success('文章已创建')
     }
-    dialogVisible.value = false;
-    fetchNews();
-  } catch (error) {
-    ElMessage.error('保存失败');
-    console.error('Failed to save news:', error);
+
+    dialogVisible.value = false
+    await fetchNews()
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.error || error?.message || '保存失败')
+  } finally {
+    saving.value = false
   }
-};
+}
+
+const updateStatus = async (id: number, status: NewsStatus) => {
+  try {
+    await apiClient.put(`/news/${id}/status`, { status })
+    const row = tableData.value.find((item) => item.id === id)
+    if (row) row.status = status
+    ElMessage.success(`文章已${statusLabel(status)}`)
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.error || '更新状态失败')
+  }
+}
 
 const handleDelete = async (id: number) => {
   try {
-    await ElMessageBox.confirm('确定要删除这篇新闻吗？此操作不可撤销。', '警告', {
-      confirmButtonText: '确定',
+    await ElMessageBox.confirm('确认删除这篇文章吗？此操作无法撤销。', '删除文章', {
+      confirmButtonText: '删除',
       cancelButtonText: '取消',
       type: 'warning',
-    });
-    await apiClient.delete(`/news/${id}`);
-    ElMessage.success('删除成功');
-    fetchNews();
+    })
+    await apiClient.delete(`/news/${id}`)
+    ElMessage.success('文章已删除')
+    await fetchNews()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败');
-      console.error('Failed to delete news:', error);
+      ElMessage.error(error?.response?.data?.error || '删除失败')
     }
   }
-};
+}
 
-const statusType = (s?: string) => {
-  if (s === 'approved') return 'success';
-  if (s === 'rejected') return 'danger';
-  if (s === 'pending') return 'warning';
-  return '';
-};
+const statusTag = (status: NewsStatus) =>
+  ({
+    pending: 'warning',
+    approved: 'success',
+    rejected: 'danger',
+  })[status]
 
-const handleSetStatus = async (row: NewsArticle, status: 'approved' | 'rejected' | 'pending') => {
-  try {
-    await apiClient.put(`/news/${row.id}/status`, { status });
-    row.status = status;
-    ElMessage.success('状态已更新');
-  } catch (e) {
-    ElMessage.error('状态更新失败');
-  }
-};
+const statusLabel = (status: NewsStatus) =>
+  ({
+    pending: '待审',
+    approved: '已通过',
+    rejected: '已驳回',
+  })[status]
 </script>
 
 <style scoped>
-.controls {
+.editor-grid {
+  height: calc(100vh - 126px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+  min-height: 0;
+}
+
+.editor-main {
+  min-width: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.editor-side {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.editor-toolbar {
+  display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
-.image-uploader .image {
-  width: 178px;
-  height: 178px;
+.table-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.table-title-cell strong {
+  font-weight: 600;
+}
+
+.table-title-cell span,
+.dialog-tip {
+  color: var(--muted-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cover-uploader :deep(.el-upload) {
   display: block;
+  width: 100%;
 }
-</style>
 
-<style>
-.image-uploader .el-upload {
+.cover-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.image-uploader-icon {
+  width: 100%;
+  height: 220px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px dashed var(--el-border-color);
   border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: var(--el-transition-duration-fast);
-}
-
-.image-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
-}
-
-.el-icon.image-uploader-icon {
+  color: var(--muted-text);
   font-size: 28px;
-  color: #8c939d;
-  width: 178px;
-  height: 178px;
-  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .editor-grid {
+    height: auto;
+    grid-template-columns: 1fr;
+  }
 }
 </style>

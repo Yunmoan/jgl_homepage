@@ -2,8 +2,10 @@ import { Router } from 'express'
 import pool from '../db'
 import cache from '../cache'
 import { protect, authorize } from '../middleware/auth'
+import { cleanString, isOneOf, parseBooleanFlag, requiredString } from '../utils/input'
 
 const router = Router()
+const announcementTypes = ['info', 'success', 'warning', 'error'] as const
 
 // 公共：获取当前有效的公告（启用且在时间范围内），按更新时间倒序
 router.get('/public', async (_req, res) => {
@@ -58,12 +60,24 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
       start_at = null,
       end_at = null,
     } = req.body || {}
-    if (!title) return res.status(400).json({ error: 'title 必填' })
+    const safeTitle = requiredString(title)
+    if (!safeTitle) return res.status(400).json({ error: 'title 必填' })
+    if (!isOneOf(type, announcementTypes)) {
+      return res.status(400).json({ error: 'type 无效' })
+    }
 
     const [result] = await pool.query(
       `INSERT INTO site_announcements (title, content, type, enabled, closeable, start_at, end_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [title, content ?? '', type, enabled ? 1 : 0, closeable ? 1 : 0, start_at, end_at],
+      [
+        safeTitle,
+        cleanString(content) ?? '',
+        type,
+        parseBooleanFlag(enabled),
+        parseBooleanFlag(closeable),
+        cleanString(start_at),
+        cleanString(end_at),
+      ],
     )
 
     cache.del('announcements_public_active')
@@ -84,32 +98,37 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
     const values: any[] = []
 
     if (title !== undefined) {
+      const safeTitle = requiredString(title)
+      if (!safeTitle) return res.status(400).json({ error: 'title 必填' })
       fields.push('title = ?')
-      values.push(title)
+      values.push(safeTitle)
     }
     if (content !== undefined) {
       fields.push('content = ?')
-      values.push(content)
+      values.push(cleanString(content) ?? '')
     }
     if (type !== undefined) {
+      if (!isOneOf(type, announcementTypes)) {
+        return res.status(400).json({ error: 'type 无效' })
+      }
       fields.push('type = ?')
       values.push(type)
     }
     if (enabled !== undefined) {
       fields.push('enabled = ?')
-      values.push(enabled ? 1 : 0)
+      values.push(parseBooleanFlag(enabled))
     }
     if (closeable !== undefined) {
       fields.push('closeable = ?')
-      values.push(closeable ? 1 : 0)
+      values.push(parseBooleanFlag(closeable))
     }
     if (start_at !== undefined) {
       fields.push('start_at = ?')
-      values.push(start_at)
+      values.push(cleanString(start_at))
     }
     if (end_at !== undefined) {
       fields.push('end_at = ?')
-      values.push(end_at)
+      values.push(cleanString(end_at))
     }
 
     if (!fields.length) return res.status(400).json({ error: 'no fields to update' })

@@ -1,46 +1,72 @@
 <template>
-  <div>
-    <h2>系统信息</h2>
-    <el-descriptions :column="1" border v-if="info">
-      <el-descriptions-item label="信息">冀高联官网综合信息系统</el-descriptions-item>
-      <el-descriptions-item label="后端版本">{{ info.backendVersion || 'N/A' }}</el-descriptions-item>
-      <el-descriptions-item label="管理面板前端版本">{{ info.frontendVersion || 'N/A' }}</el-descriptions-item>
-      <el-descriptions-item label="Node 版本">{{ info.node }}</el-descriptions-item>
-      <el-descriptions-item label="平台">{{ info.platform }}</el-descriptions-item>
-      <el-descriptions-item label="运行时长">{{ (info.uptime / 3600).toFixed(2) }} h</el-descriptions-item>
-      <el-descriptions-item label="Github"><el-link href="https://github.com/Yunmoan/jgl_homepage"
-          target="_blank">https://github.com/Yunmoan/jgl_homepage</el-link></el-descriptions-item>
-    </el-descriptions>
+  <div class="admin-page">
+    <div class="page-header">
+      <div class="page-title">
+        <h1>系统信息</h1>
+        <p>查看管理面板、后端版本和服务器运行状态。</p>
+      </div>
+      <div class="page-actions">
+        <el-button :icon="Refresh" :loading="loading" @click="loadInfo">刷新</el-button>
+      </div>
+    </div>
 
-    <h2 style="margin-top: 32px">系统负载</h2>
-    <el-descriptions :column="1" border v-if="info">
-      <el-descriptions-item label="1 分钟负载">{{ info.loadavg?.[0]?.toFixed(2) || 'N/A' }}</el-descriptions-item>
-      <el-descriptions-item label="5 分钟负载">{{ info.loadavg?.[1]?.toFixed(2) || 'N/A' }}</el-descriptions-item>
-      <el-descriptions-item label="15 分钟负载">{{ info.loadavg?.[2]?.toFixed(2) || 'N/A' }}</el-descriptions-item>
-      <el-descriptions-item label="CPU 核心数">{{ info.cpus || 'N/A' }}</el-descriptions-item>
-      <el-descriptions-item label="CPU 占用率">
-        <el-progress
-          :percentage="cpuPercent"
-          :color="cpuColor"
-          style="max-width: 300px"
-        />
-      </el-descriptions-item>
-      <el-descriptions-item label="总内存">{{ formatBytes(info.totalmem) }}</el-descriptions-item>
-      <el-descriptions-item label="可用内存">{{ formatBytes(info.freemem) }}</el-descriptions-item>
-      <el-descriptions-item label="内存使用率">
-        <el-progress
-          :percentage="memoryPercent"
-          :color="memoryColor"
-          style="max-width: 300px"
-        />
-      </el-descriptions-item>
-    </el-descriptions>
+    <div class="system-grid" v-loading="loading && !info">
+      <el-card class="table-card" shadow="never">
+        <template #header>
+          <div class="card-header">版本信息</div>
+        </template>
+        <el-descriptions :column="1" border v-if="info">
+          <el-descriptions-item label="系统">冀高联官网综合信息系统</el-descriptions-item>
+          <el-descriptions-item label="后端版本">{{ info.backendVersion || 'N/A' }}</el-descriptions-item>
+          <el-descriptions-item label="管理面板版本">{{ info.frontendVersion || 'N/A' }}</el-descriptions-item>
+          <el-descriptions-item label="Node 版本">{{ info.node }}</el-descriptions-item>
+          <el-descriptions-item label="平台">{{ info.platform }}</el-descriptions-item>
+          <el-descriptions-item label="运行时长">{{ uptimeText }}</el-descriptions-item>
+          <el-descriptions-item label="Github">
+            <el-link href="https://github.com/Yunmoan/jgl_homepage" target="_blank" type="primary" :underline="false">
+              Yunmoan/jgl_homepage
+            </el-link>
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <el-card class="table-card" shadow="never">
+        <template #header>
+          <div class="card-header">系统负载</div>
+        </template>
+        <div v-if="info" class="health-stack">
+          <div class="health-item">
+            <div class="health-title">
+              <span>CPU 占用率</span>
+              <strong>{{ cpuPercent }}%</strong>
+            </div>
+            <el-progress :percentage="cpuPercent" :color="cpuColor" :stroke-width="10" />
+          </div>
+          <div class="health-item">
+            <div class="health-title">
+              <span>内存使用率</span>
+              <strong>{{ memoryPercent }}%</strong>
+            </div>
+            <el-progress :percentage="memoryPercent" :color="memoryColor" :stroke-width="10" />
+          </div>
+          <div class="metric-list">
+            <div><span>1 分钟负载</span><b>{{ formatLoad(info.loadavg?.[0]) }}</b></div>
+            <div><span>5 分钟负载</span><b>{{ formatLoad(info.loadavg?.[1]) }}</b></div>
+            <div><span>15 分钟负载</span><b>{{ formatLoad(info.loadavg?.[2]) }}</b></div>
+            <div><span>CPU 核心数</span><b>{{ info.cpus || 'N/A' }}</b></div>
+            <div><span>总内存</span><b>{{ formatBytes(info.totalmem) }}</b></div>
+            <div><span>可用内存</span><b>{{ formatBytes(info.freemem) }}</b></div>
+          </div>
+        </div>
+      </el-card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
 import apiClient from '@/api'
 
 interface SystemInfo {
@@ -57,21 +83,34 @@ interface SystemInfo {
 }
 
 const info = ref<SystemInfo | null>(null)
+const loading = ref(false)
+let timer: number | undefined
 
 const loadInfo = async () => {
+  loading.value = true
   try {
     const { data } = await apiClient.get<SystemInfo>('/system/info')
     info.value = data
   } catch {
     ElMessage.error('无法获取系统信息')
+  } finally {
+    loading.value = false
   }
 }
 
 const formatBytes = (bytes?: number) => {
   if (!bytes) return 'N/A'
-  const gb = bytes / (1024 ** 3)
-  return `${gb.toFixed(2)} GB`
+  return `${(bytes / 1024 ** 3).toFixed(2)} GB`
 }
+
+const formatLoad = (value?: number) => (typeof value === 'number' ? value.toFixed(2) : 'N/A')
+
+const uptimeText = computed(() => {
+  const seconds = Math.floor(info.value?.uptime ?? 0)
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  return `${hours}h ${minutes}m`
+})
 
 const memoryPercent = computed(() => {
   if (!info.value?.totalmem || !info.value?.freemem) return 0
@@ -85,10 +124,7 @@ const memoryColor = computed(() => {
   return '#f56c6c'
 })
 
-const cpuPercent = computed(() => {
-  return info.value?.cpu_usage ?? 0
-})
-
+const cpuPercent = computed(() => info.value?.cpu_usage ?? 0)
 const cpuColor = computed(() => {
   const p = cpuPercent.value
   if (p < 60) return '#67c23a'
@@ -98,7 +134,61 @@ const cpuColor = computed(() => {
 
 onMounted(() => {
   loadInfo()
-  const timer = setInterval(loadInfo, 5000)
-  onUnmounted(() => clearInterval(timer))
+  timer = window.setInterval(loadInfo, 5000)
+})
+
+onUnmounted(() => {
+  window.clearInterval(timer)
 })
 </script>
+
+<style scoped>
+.system-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.8fr);
+  gap: 16px;
+}
+
+.card-header {
+  font-weight: 650;
+}
+
+.health-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.health-title,
+.metric-list div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.health-title {
+  margin-bottom: 8px;
+}
+
+.health-title span,
+.metric-list span {
+  color: var(--muted-text);
+  font-size: 13px;
+}
+
+.metric-list {
+  display: grid;
+  gap: 10px;
+}
+
+.metric-list b {
+  color: var(--text-color);
+  font-weight: 650;
+}
+
+@media (max-width: 960px) {
+  .system-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

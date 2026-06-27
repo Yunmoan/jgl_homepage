@@ -6,6 +6,9 @@
       <div class="members-grid">
         <MemberCard v-for="member in displayedMembers" :key="member.id" :member="member" @image-error="onImageError" />
       </div>
+      <div class="apply-entry">
+        <router-link to="/club-apply" class="apply-button">申请注册社团</router-link>
+      </div>
       <div ref="observerTarget" class="observer-target"></div>
       <!-- Loading indicator -->
       <div v-if="isLoading" class="loading-indicator">
@@ -43,7 +46,6 @@ const membersPerPage = 18;
 const currentPage = ref(1);
 const paginationInfo = ref<PaginationInfo | null>(null);
 const isLoading = ref(false);
-
 const onImageError = (event: Event) => {
   const target = event.target as HTMLImageElement;
   target.src = '/placeholder.svg';
@@ -165,6 +167,31 @@ onUnmounted(() => {
 
 .observer-target {
   height: 20px;
+}
+
+.apply-entry {
+  display: flex;
+  justify-content: center;
+  margin: 0.25rem 0 1.5rem;
+}
+
+.apply-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 8px;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.apply-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .loading-indicator {

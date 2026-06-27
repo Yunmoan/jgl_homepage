@@ -4,6 +4,8 @@ import type { RouteLocationNormalized } from 'vue-router'
 // Import components
 import Login from '@/views/Login.vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
+import Dashboard from '@/views/Dashboard.vue'
+import ApplicationStatus from '@/views/ApplicationStatus.vue'
 import NewsManagement from '@/views/NewsManagement.vue'
 import MembersManagement from '@/views/MembersManagement.vue'
 import WorksManagement from '@/views/WorksManagement.vue'
@@ -16,6 +18,8 @@ import UserManagement from '@/views/UserManagement.vue'
 import AnnouncementsManagement from '@/views/AnnouncementsManagement.vue'
 import SystemInfo from '@/views/SystemInfo.vue'
 
+const validRoles = ['admin', 'editor', 'viewer', 'member'] as const
+
 function getRole(): string | null {
   try {
     const token = localStorage.getItem('token')
@@ -23,7 +27,8 @@ function getRole(): string | null {
     const parts = token.split('.')
     if (parts.length !== 3) return null
     const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    return payload?.role ?? null
+    if (payload?.exp && Date.now() >= payload.exp * 1000) return null
+    return validRoles.includes(payload?.role) ? payload.role : null
   } catch {
     return null
   }
@@ -41,7 +46,19 @@ const routes = [
     component: AdminLayout,
     meta: { requiresAuth: true, title: '控制台' },
     children: [
-      { path: '', redirect: '/admin/news' },
+      { path: '', redirect: '/admin/dashboard' },
+      {
+        path: 'dashboard',
+        name: 'admin-dashboard',
+        component: Dashboard,
+        meta: { title: '概览', roles: ['admin', 'editor', 'member'] },
+      },
+      {
+        path: 'application',
+        name: 'admin-application',
+        component: ApplicationStatus,
+        meta: { title: '入驻申请', roles: ['viewer'] },
+      },
       {
         path: 'news',
         name: 'admin-news',
@@ -76,7 +93,7 @@ const routes = [
         path: 'admin-history',
         name: 'admin-admin-history',
         component: AdminHistoryManagement,
-        meta: { title: '理事会', roles: ['admin', 'editor'] },
+        meta: { title: '理事会', roles: ['admin'] },
       },
       {
         path: 'friend-links',
@@ -124,29 +141,40 @@ const router = createRouter({
 
 function firstAllowedChild(to: RouteLocationNormalized, role: string | null) {
   const children = to.matched[0]?.children ?? []
+  const fallback = role === 'viewer' ? '/admin/application' : '/login'
   for (const r of children) {
     const roles = (r.meta as any)?.roles as string[] | undefined
-    if (!roles || (role && roles.includes(role)))
+    if (r.path && roles && role && roles.includes(role))
       return r.path.startsWith('/admin') ? r.path : '/admin/' + r.path
   }
-  return '/admin/news'
+  return fallback
 }
 
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
   const role = getRole()
+  const requiresAuth = to.matched.some((record) => (record.meta as any).requiresAuth)
 
-  if (to.matched.some((record) => (record.meta as any).requiresAuth) && !token) {
+  if (requiresAuth && (!token || !role)) {
+    localStorage.removeItem('token')
     return next({ name: 'login' })
   }
   if (to.name === 'login' && token) {
-    return next({ path: '/admin' })
+    if (!role) {
+      localStorage.removeItem('token')
+      return next()
+    }
+    return next({ path: role === 'viewer' ? '/admin/application' : '/admin' })
   }
 
   // 角色路由访问控制
   const requiredRoles = to.matched.find((m) => (m.meta as any)?.roles)?.meta?.roles as
     | string[]
     | undefined
+  if (requiredRoles && !role) {
+    localStorage.removeItem('token')
+    return next({ name: 'login' })
+  }
   if (requiredRoles && role && !requiredRoles.includes(role)) {
     // 跳转到当前模块下第一个有权限的子路由
     const target = firstAllowedChild(to, role)

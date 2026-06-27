@@ -2,11 +2,12 @@ import { Router } from 'express'
 import pool from '../db'
 import { protect, authorize } from '../middleware/auth'
 import multer from 'multer'
-import axios from 'axios'
-import config from '../config'
+import { cleanString, isOneOf, requiredString } from '../utils/input'
+import { verifyRecaptcha } from '../utils/recaptcha'
 
 const router = Router()
 const upload = multer({ storage: multer.memoryStorage() })
+const messageStatuses = ['pending', 'approved', 'rejected'] as const
 
 // @route   GET /api/messages
 // @desc    Get all approved messages
@@ -57,9 +58,16 @@ router.post(
       await connection.query('TRUNCATE TABLE messages')
 
       for (const message of jsonData) {
+        const status = isOneOf(message.status, messageStatuses) ? message.status : 'approved'
         await connection.query(
           'INSERT INTO messages (id, author, content, qq, status) VALUES (?, ?, ?, ?, ?)',
-          [message.id, message.author, message.content, message.qq, message.status || 'approved'],
+          [
+            message.id,
+            requiredString(message.author),
+            requiredString(message.content),
+            cleanString(message.qq),
+            status,
+          ],
         )
       }
 
@@ -80,6 +88,8 @@ router.post(
 // @access  Public
 router.post('/', async (req, res) => {
   const { author, content, qq, token } = req.body
+  const safeAuthor = requiredString(author)
+  const safeContent = requiredString(content)
 
   // 1. Verify reCAPTCHA token
   if (!token) {
@@ -87,49 +97,19 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const secret = config.recaptcha.secretKey
-    if (!secret) {
-      console.error('RECAPTCHA_SECRET_KEY is not configured')
-      return res
-        .status(500)
-        .json({ error: '服务端未配置 reCAPTCHA Secret（RECAPTCHA_SECRET_KEY）' })
-    }
-
-    const params = new URLSearchParams()
-    params.append('secret', secret as string)
-    params.append('response', token)
-
-    const { data } = await axios.post('https://recaptcha.net/recaptcha/api/siteverify', params, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      timeout: 5000,
-    })
-
-    const { success, score, action, ['error-codes']: errorCodes } = data as any
-
-    if (!success) {
-      return res.status(400).json({ error: 'reCAPTCHA 验证失败', errorCodes })
-    }
-
-    if (typeof score === 'number' && score < 0.5) {
-      // 可根据需要调整分数阈值
-      return res.status(400).json({ error: 'reCAPTCHA 评分过低', score })
-    }
-
-    // 可选：校验 action 与前端 executeRecaptcha 的 action 一致
-    if (action && action !== 'submit_message') {
-      return res.status(400).json({ error: 'reCAPTCHA action 不匹配', action })
+    const recaptchaResult = await verifyRecaptcha(token, 'submit_message')
+    if (!recaptchaResult.ok) {
+      return res.status(recaptchaResult.status).json(recaptchaResult.body)
     }
 
     // 2. If verification is successful, proceed to save the message
-    if (!author || !content) {
+    if (!safeAuthor || !safeContent) {
       return res.status(400).json({ error: 'Author and content are required' })
     }
 
     const [result] = await pool.query(
       'INSERT INTO messages (author, content, qq, status) VALUES (?, ?, ?, ?)',
-      [author, content, qq, 'pending'],
+      [safeAuthor, safeContent, cleanString(qq), 'pending'],
     )
     res
       .status(201)
@@ -145,13 +125,16 @@ router.post('/', async (req, res) => {
 // @access  Private (Admin, Editor)
 router.post('/add', protect, authorize('admin', 'editor'), async (req, res) => {
   const { author, content, qq } = req.body
-  if (!author || !content) {
+  const safeAuthor = requiredString(author)
+  const safeContent = requiredString(content)
+
+  if (!safeAuthor || !safeContent) {
     return res.status(400).json({ error: 'Author and content are required' })
   }
   try {
     const [result] = await pool.query(
       'INSERT INTO messages (author, content, qq, status) VALUES (?, ?, ?, ?)',
-      [author, content, qq, 'approved'],
+      [safeAuthor, safeContent, cleanString(qq), 'approved'],
     )
     res.status(201).json({
       message: 'Message created successfully by admin',
@@ -169,13 +152,16 @@ router.post('/add', protect, authorize('admin', 'editor'), async (req, res) => {
 router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
   const { id } = req.params
   const { author, content, qq } = req.body
-  if (!author || !content) {
+  const safeAuthor = requiredString(author)
+  const safeContent = requiredString(content)
+
+  if (!safeAuthor || !safeContent) {
     return res.status(400).json({ error: 'Author and content are required' })
   }
   try {
     const [result] = await pool.query(
       'UPDATE messages SET author = ?, content = ?, qq = ? WHERE id = ?',
-      [author, content, qq, id],
+      [safeAuthor, safeContent, cleanString(qq), id],
     )
     if ((result as any).affectedRows === 0) {
       return res.status(404).json({ error: 'Message not found' })
@@ -193,7 +179,7 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
 router.put('/:id/status', protect, authorize('admin', 'editor'), async (req, res) => {
   const { id } = req.params
   const { status } = req.body
-  if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
+  if (!isOneOf(status, messageStatuses)) {
     return res.status(400).json({ error: 'Valid status is required' })
   }
   try {

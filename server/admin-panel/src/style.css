@@ -1,22 +1,17 @@
 :root {
-  /* Primary Theme */
-  --el-color-primary: #3a7afe;
+  --el-color-primary: #2563eb;
   --el-color-success: #10b981;
   --el-color-warning: #f59e0b;
   --el-color-danger: #ef4444;
-
-  /* Layout */
   --app-bg: #f6f7fb;
   --header-bg: #ffffff;
   --sidebar-bg: #ffffff;
   --card-bg: #ffffff;
   --text-color: #1f2330;
   --muted-text: #6b7280;
-  --page-padding: 20px;
-
-  /* Radius & Shadow */
-  --radius-base: 10px;
-  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --page-padding: 18px;
+  --radius-base: 8px;
+  --shadow-card: none;
 }
 
 .dark {
@@ -55,6 +50,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+#app {
+  min-width: 0;
+}
+
 a {
   color: var(--el-color-primary);
   text-decoration: none;
@@ -84,6 +83,7 @@ a:hover {
 .el-card {
   border-radius: var(--radius-base);
   box-shadow: var(--shadow-card);
+  border-color: var(--el-border-color-lighter);
 }
 .el-dialog {
   border-radius: var(--radius-base);
@@ -92,14 +92,144 @@ a:hover {
   border-radius: 8px;
 }
 
+.admin-page {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+.page-title {
+  min-width: 0;
+}
+
+.page-title h1 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+.page-title p {
+  margin: 6px 0 0;
+  color: var(--muted-text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.page-actions,
+.control-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.table-card {
+  background: var(--card-bg);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.table-card .el-card__body {
+  min-width: 0;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  margin-bottom: 14px;
+}
+
+.filter-count {
+  margin-left: auto;
+  color: var(--muted-text);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: flex-end;
+  overflow-x: auto;
+  padding-top: 14px;
+}
+
+.table-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.table-title-cell strong {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.table-title-cell span {
+  color: var(--muted-text);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.table-image-thumb {
+  display: block;
+  width: 76px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--app-bg);
+}
+
+.dialog-tip {
+  color: var(--muted-text);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 /* Tables */
 .el-table {
   background-color: var(--card-bg);
   border-radius: var(--radius-base);
 }
-.el-table th,
-.el-table td {
-  /* reduce density slightly with global size=small */
+
+.el-table .cell {
+  word-break: break-word;
+}
+
+.el-table__body-wrapper,
+.el-table__header-wrapper {
+  min-width: 0;
+}
+
+.el-dialog {
+  max-width: calc(100vw - 24px);
+}
+
+.el-form {
+  min-width: 0;
+}
+
+.el-input,
+.el-textarea,
+.el-select {
+  min-width: 0;
 }
 
 /* Upload preview image */
@@ -208,4 +338,49 @@ a:hover {
 }
 .dark .v-md-editor .vuepress-markdown-body pre {
   background: rgba(255, 255, 255, 0.06) !important;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --page-padding: 12px;
+  }
+
+  .page-header,
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-actions,
+  .control-actions {
+    justify-content: flex-start;
+  }
+
+  .filter-bar {
+    align-items: stretch;
+  }
+
+  .filter-bar .el-input,
+  .filter-bar .el-select {
+    width: 100% !important;
+  }
+
+  .filter-count {
+    margin-left: 0;
+  }
+
+  .table-footer {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .el-dialog {
+    width: calc(100vw - 24px) !important;
+  }
+
+  .el-dialog__body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
 }

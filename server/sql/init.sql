@@ -89,6 +89,18 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   role ENUM('admin', 'editor', 'viewer', 'member') NOT NULL DEFAULT 'viewer',
   nickname VARCHAR(100),
+  club_name VARCHAR(120),
+  club_logo VARCHAR(255),
+  club_link VARCHAR(255),
+  contact_name VARCHAR(100),
+  contact_qq VARCHAR(50),
+  club_group_qq VARCHAR(50),
+  application_reason TEXT,
+  status ENUM('pending', 'approved', 'rejected', 'disabled', 'withdrawn') NOT NULL DEFAULT 'approved',
+  review_note TEXT,
+  reviewed_by INT,
+  reviewed_at DATETIME NULL,
+  registration_ip_hash VARCHAR(64),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -98,6 +110,7 @@ CREATE TABLE IF NOT EXISTS members (
   name VARCHAR(255) NOT NULL,
   logo VARCHAR(255),
   link VARCHAR(255),
+  owner_user_id INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -115,3 +128,13 @@ CREATE TABLE IF NOT EXISTS site_announcements (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS page_views (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  path VARCHAR(255) NOT NULL,
+  referrer VARCHAR(512),
+  ip_hash VARCHAR(64),
+  user_agent VARCHAR(255),
+  viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_page_views_viewed_at (viewed_at),
+  INDEX idx_page_views_path (path)
+);

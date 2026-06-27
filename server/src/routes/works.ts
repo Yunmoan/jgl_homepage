@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import pool from '../db'
 import { protect, authorize, optionalAuth } from '../middleware/auth'
+import { parseBooleanFlag } from '../utils/input'
 
 const router = Router()
 
@@ -27,7 +28,7 @@ router.get('/', optionalAuth as any, async (req: any, res) => {
       params.push(club)
     }
     if (typeof featured !== 'undefined') {
-      const val = ['1', 'true', 'True', 'TRUE'].includes(String(featured)) ? 1 : 0
+      const val = parseBooleanFlag(featured)
       clauses.push('w.featured = ?')
       params.push(val)
     }
@@ -57,11 +58,7 @@ router.post('/', protect, authorize('admin', 'editor', 'member'), async (req: an
   const featuredRaw = (req.body as any)?.featured
   // 仅 admin 可设置 featured；editor 创建时强制为 0
   const featured =
-    req.user?.role === 'admin'
-      ? ['1', 1, true, 'true', 'True', 'TRUE'].includes(featuredRaw)
-        ? 1
-        : 0
-      : 0
+    req.user?.role === 'admin' ? parseBooleanFlag(featuredRaw) : 0
 
   if (!title) {
     return res.status(400).json({ error: 'Title is required' })
@@ -102,11 +99,7 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
   const featuredRaw = (req.body as any)?.featured
   // 仅 admin 可修改 featured；editor 时传入也会被忽略
   const featuredParam =
-    req.user?.role === 'admin'
-      ? ['1', 1, true, 'true', 'True', 'TRUE'].includes(featuredRaw)
-        ? 1
-        : 0
-      : null
+    req.user?.role === 'admin' ? parseBooleanFlag(featuredRaw) : null
 
   if (!title) {
     return res.status(400).json({ error: 'Title is required' })
@@ -162,7 +155,7 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
 router.put('/:id/featured', protect, authorize('admin'), async (req, res) => {
   const { id } = req.params as { id: string }
   const { featured } = req.body as { featured?: any }
-  const val = ['1', 1, true, 'true', 'True', 'TRUE'].includes(String(featured)) ? 1 : 0
+  const val = parseBooleanFlag(featured)
   try {
     const [result] = await pool.query('UPDATE works SET featured = ? WHERE id = ?', [val, id])
     if ((result as any).affectedRows === 0) {

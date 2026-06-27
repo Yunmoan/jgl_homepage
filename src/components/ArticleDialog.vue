@@ -22,6 +22,11 @@
 import { computed, watch, onUnmounted } from 'vue';
 import { marked } from 'marked';
 
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+})
+
 interface Article {
   id: number
   title: string
@@ -194,6 +199,7 @@ onUnmounted(() => {
   padding: 1rem 2rem 2rem;
   overflow-y: auto;
   line-height: 1.8;
+  font-size: 1rem;
 }
 
 /* Custom Scrollbar Styling */
@@ -225,13 +231,37 @@ onUnmounted(() => {
   margin-bottom: 1em;
 }
 
+.dialog-body :deep(h1) {
+  font-size: 1.75rem;
+}
+
+.dialog-body :deep(h2) {
+  font-size: 1.45rem;
+}
+
+.dialog-body :deep(h3) {
+  font-size: 1.2rem;
+}
+
 .dialog-body :deep(p) {
   margin-bottom: 1.2em;
+}
+
+.dialog-body :deep(a) {
+  color: #f0b85a;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(240, 184, 90, 0.38);
+}
+
+.dialog-body :deep(a:hover) {
+  color: #ffd28a;
+  border-bottom-color: rgba(255, 210, 138, 0.72);
 }
 
 .dialog-body :deep(ul),
 .dialog-body :deep(ol) {
   padding-left: 1.5em;
+  margin: 0 0 1.2em;
 }
 
 .dialog-body :deep(li) {
@@ -265,12 +295,53 @@ onUnmounted(() => {
   border-radius: 8px;
   overflow-x: auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 1.2em 0;
 }
 
 .dialog-body :deep(pre)> :deep(code) {
   background: none;
   padding: 0;
   border: none;
+}
+
+.dialog-body :deep(img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.4em auto;
+  border-radius: 8px;
+}
+
+.dialog-body :deep(hr) {
+  height: 1px;
+  border: 0;
+  margin: 2em 0;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.dialog-body :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.4em 0;
+  overflow: hidden;
+  font-size: 0.95rem;
+}
+
+.dialog-body :deep(th),
+.dialog-body :deep(td) {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 0.65rem 0.8rem;
+  text-align: left;
+}
+
+.dialog-body :deep(th) {
+  background: rgba(15, 23, 42, 0.45);
+  color: #fff;
+  font-weight: 700;
+}
+
+.dialog-body :deep(td) {
+  background: rgba(15, 23, 42, 0.18);
 }
 
 .dialog-fade-enter-active,
@@ -305,5 +376,34 @@ onUnmounted(() => {
   padding: 4px 8px;
   border-radius: 8px;
   z-index: 2;
+}
+
+@media (max-width: 640px) {
+  .dialog-content {
+    width: calc(100% - 24px);
+    max-height: 92%;
+  }
+
+  .dialog-header {
+    height: 190px;
+  }
+
+  .header-content {
+    padding: 1.2rem;
+  }
+
+  .dialog-title {
+    font-size: 1.45rem;
+  }
+
+  .dialog-body {
+    padding: 1rem 1.2rem 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  .badge {
+    right: 1.2rem;
+    bottom: 1.2rem;
+  }
 }
 </style>

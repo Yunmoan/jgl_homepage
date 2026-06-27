@@ -1,304 +1,396 @@
 <template>
-    <div>
-        <el-card class="page-card" shadow="hover">
-            <div class="controls">
-                <h1>成员管理</h1>
-                <div class="control-actions">
-                    <el-button type="primary" @click="handleCreate">添加成员</el-button>
-                </div>
-            </div>
-
-            <el-table :data="tableData" v-loading="loading" style="width: 100%">
-                <el-table-column prop="id" label="ID" width="80" />
-                <el-table-column prop="name" label="名称" min-width="160" />
-                <el-table-column prop="logo" label="Logo" width="140">
-                    <template #default="scope">
-                        <img v-if="scope.row.logo" :src="formatLogoUrl(scope.row.logo)" alt="Logo" style="width: 64px; height: 64px; object-fit: cover; border-radius: 6px;" />
-                    </template>
-                </el-table-column>
-                <el-table-column prop="link" label="链接" min-width="200" show-overflow-tooltip />
-                <el-table-column label="操作" width="200" fixed="right">
-                    <template #default="scope">
-                        <el-button size="small" :icon="Edit" @click="handleEdit(scope.row)">编辑</el-button>
-                        <el-popconfirm title="确定要删除这个成员吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="handleDelete(scope.row.id)">
-                            <template #reference>
-                                <el-button size="small" type="danger" :icon="Delete">删除</el-button>
-                            </template>
-                        </el-popconfirm>
-                    </template>
-                </el-table-column>
-                <template #empty>
-                    <el-empty description="暂无数据" />
-                </template>
-            </el-table>
-
-            <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
-                <el-pagination
-                    v-model:current-page="currentPage"
-                    v-model:page-size="pageSize"
-                    :page-sizes="[10, 18, 30, 50]"
-                    layout="total, sizes, prev, pager, next, jumper"
-                    :total="total"
-                    @current-change="fetchData"
-                    @size-change="handleSizeChange"
-                />
-            </div>
-        </el-card>
-
-        <el-dialog v-model="dialogVisible" :title="dialogTitle" width="50%">
-            <el-form :model="form" label-width="100px">
-                <el-form-item label="名称">
-                    <el-input v-model="form.name" />
-                </el-form-item>
-                <el-form-item label="Logo">
-                    <div class="logo-upload-row">
-                        <div v-if="form.logo" class="logo-preview">
-                            <img :src="formatLogoUrl(form.logo)" alt="Logo" />
-                            <el-button type="danger" size="small" circle @click="form.logo = ''" class="remove-btn">
-                                <el-icon><Delete /></el-icon>
-                            </el-button>
-                        </div>
-                        <div v-else class="image-uploader" @click="triggerFileInput">
-                            <el-icon class="image-uploader-icon"><Plus /></el-icon>
-                        </div>
-                        <div class="upload-hint">支持 JPG/PNG/WebP，将自动转换为圆形 WebP</div>
-                    </div>
-                    <input ref="fileInputRef" type="file" accept="image/jpeg,image/png,image/webp" style="display:none"
-                        @change="handleFileChange" />
-                </el-form-item>
-                <el-form-item label="链接">
-                    <el-input v-model="form.link" />
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="dialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="handleSave">保存</el-button>
-                </span>
-            </template>
-        </el-dialog>
+  <div class="admin-page">
+    <div class="page-header">
+      <div class="page-title">
+        <h1>成员社团</h1>
+        <p>维护官网成员社团列表和 Logo，支持按名称或链接搜索。</p>
+      </div>
+      <div class="page-actions">
+        <el-button :icon="Refresh" :loading="loading" @click="fetchData">刷新</el-button>
+        <el-button v-if="canCreate" type="primary" :icon="Plus" @click="handleCreate">添加社团</el-button>
+      </div>
     </div>
+
+    <el-card class="table-card" shadow="never">
+      <div class="filter-bar">
+        <el-input
+          v-model="keyword"
+          clearable
+          :prefix-icon="Search"
+          placeholder="搜索名称或链接"
+          style="width: 280px"
+        />
+        <span class="filter-count">共 {{ total }} 个社团</span>
+      </div>
+
+      <el-table :data="tableData" v-loading="loading" border height="calc(100vh - 310px)">
+        <el-table-column prop="id" label="ID" width="76" />
+        <el-table-column label="Logo" width="116">
+          <template #default="{ row }">
+            <img v-if="row.logo" :src="formatLogoUrl(row.logo)" class="member-logo" alt="" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="name" label="名称" min-width="220" />
+        <el-table-column label="归属账号" min-width="160">
+          <template #default="{ row }">
+            <el-tag v-if="row.owner_label" effect="plain">{{ row.owner_label }}</el-tag>
+            <span v-else class="muted">未分配</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="链接" min-width="260">
+          <template #default="{ row }">
+            <el-link v-if="row.link" :href="row.link" target="_blank" type="primary" :underline="false">
+              {{ row.link }}
+            </el-link>
+            <span v-else class="muted">未填写</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="190" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+            <el-button
+              v-if="isAdmin"
+              size="small"
+              type="danger"
+              plain
+              :icon="Delete"
+              @click="handleDelete(row.id)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="没有符合条件的社团" />
+        </template>
+      </el-table>
+
+      <div class="table-footer">
+        <el-pagination
+          v-if="!isMember"
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 18, 30, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          @current-change="fetchData"
+          @size-change="handleSizeChange"
+        />
+      </div>
+    </el-card>
+
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="560px">
+      <el-form :model="form" label-width="92px">
+        <el-form-item label="名称">
+          <el-input v-model="form.name" maxlength="80" show-word-limit />
+        </el-form-item>
+        <el-form-item label="Logo">
+          <div class="logo-field">
+            <el-upload
+              class="image-uploader"
+              action="#"
+              :show-file-list="false"
+              :http-request="uploadLogo"
+              :before-upload="beforeLogoUpload"
+            >
+              <img v-if="form.logo" :src="formatLogoUrl(form.logo)" class="image" />
+              <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
+            </el-upload>
+            <div class="logo-actions">
+              <el-button v-if="form.logo" text type="danger" :icon="Delete" @click="form.logo = ''">
+                移除 Logo
+              </el-button>
+              <div class="dialog-tip">支持 JPG、PNG、WebP，上传后会自动处理为圆形 WebP。</div>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item label="链接">
+          <el-input v-model="form.link" placeholder="https://..." />
+        </el-form-item>
+        <el-form-item v-if="isAdmin" label="归属账号">
+          <el-select
+            v-model="form.ownerUserId"
+            filterable
+            clearable
+            placeholder="选择允许自助维护的社团账号"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="user in memberUsers"
+              :key="user.id"
+              :label="userLabel(user)"
+              :value="user.id"
+            />
+          </el-select>
+          <div class="dialog-tip">绑定后，该账号可以自行修改此社团的名称、链接和 Logo。</div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="uploadLoading" @click="handleSave">保存</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed } from 'vue';
-import apiClient from '@/api';
-import { ElMessage } from 'element-plus';
-import { Plus, Edit, Delete } from '@element-plus/icons-vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import apiClient from '@/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, Edit, Plus, Refresh, Search } from '@element-plus/icons-vue'
+import type { UploadProps } from 'element-plus'
 
 interface Member {
-    id: number;
-    name: string;
-    logo: string;
-    link: string;
+  id: number
+  name: string
+  logo: string
+  link: string
+  owner_user_id?: number | null
+  owner_label?: string
+  owner_username?: string
+  ownerUserId?: number | null
 }
 
-const tableData = ref<Member[]>([]);
-const loading = ref(true);
-const dialogVisible = ref(false);
-const isEditMode = ref(false);
-const fileInputRef = ref<HTMLInputElement | null>(null);
-const uploadLoading = ref(false);
+interface UserOption {
+  id: number
+  username: string
+  nickname?: string
+  club_name?: string
+  role: string
+  status: string
+}
 
-// 分页状态
-const currentPage = ref(1);
-const pageSize = ref(18);
-const total = ref(0);
+const tableData = ref<Member[]>([])
+const loading = ref(true)
+const dialogVisible = ref(false)
+const isEditMode = ref(false)
+const uploadLoading = ref(false)
+const keyword = ref('')
+const currentPage = ref(1)
+const pageSize = ref(18)
+const total = ref(0)
+const memberUsers = ref<UserOption[]>([])
+let keywordTimer: number | undefined
 
 const form = reactive<Partial<Member>>({
-    id: undefined,
-    name: '',
-    logo: '',
-    link: '',
-});
+  id: undefined,
+  name: '',
+  logo: '',
+  link: '',
+  ownerUserId: null,
+})
 
-const dialogTitle = computed(() => (isEditMode.value ? '编辑成员' : '添加成员'));
+function parseJwtRole(): string | null {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return null
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload?.role ?? null
+  } catch {
+    return null
+  }
+}
 
-const formatLogoUrl = (src?: string) => {
-    if (!src) return '';
-    if (src.startsWith('http://') || src.startsWith('https://')) return src;
-    return src;
-};
+const isAdmin = computed(() => parseJwtRole() === 'admin')
+const isEditor = computed(() => parseJwtRole() === 'editor')
+const isMember = computed(() => parseJwtRole() === 'member')
+const canCreate = computed(() => isAdmin.value || isEditor.value)
+const dialogTitle = computed(() => (isEditMode.value ? '编辑社团' : '添加社团'))
+const formatLogoUrl = (src?: string) => src || ''
+const userLabel = (user: UserOption) => {
+  const display = user.club_name || user.nickname || user.username
+  return `${display}（${user.username}）`
+}
 
 const fetchData = async () => {
-    loading.value = true;
-    try {
-        const response = await apiClient.get('/members', {
-            params: {
-                page: currentPage.value,
-                limit: pageSize.value,
-            },
-        });
-        // 后端返回 { data: Member[], pagination: {...} }
-        tableData.value = response.data?.data ?? [];
-        total.value = response.data?.pagination?.total ?? 0;
-    } catch (error) {
-        ElMessage.error('获取成员列表失败');
-        tableData.value = [];
-        total.value = 0;
-    } finally {
-        loading.value = false;
+  loading.value = true
+  try {
+    if (isMember.value) {
+      const response = await apiClient.get('/members/mine')
+      const rows = response.data ?? []
+      tableData.value = rows
+      total.value = rows.length
+    } else {
+      const response = await apiClient.get('/members', {
+        params: {
+          page: currentPage.value,
+          limit: pageSize.value,
+          keyword: keyword.value.trim() || undefined,
+        },
+      })
+      tableData.value = response.data?.data ?? []
+      total.value = response.data?.pagination?.total ?? 0
     }
-};
+  } catch (error) {
+    ElMessage.error('获取社团列表失败')
+    tableData.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(keyword, () => {
+  window.clearTimeout(keywordTimer)
+  keywordTimer = window.setTimeout(() => {
+    currentPage.value = 1
+    fetchData()
+  }, 300)
+})
+
+const fetchMemberUsers = async () => {
+  if (!isAdmin.value) return
+  try {
+    const { data } = await apiClient.get('/users', { params: { status: 'approved' } })
+    memberUsers.value = (data || []).filter((user: UserOption) => user.role === 'member')
+  } catch {
+    memberUsers.value = []
+  }
+}
 
 onMounted(() => {
-    fetchData();
-});
+  fetchData()
+  fetchMemberUsers()
+})
+onUnmounted(() => window.clearTimeout(keywordTimer))
 
 const handleSizeChange = () => {
-    // 切换每页大小时重置到第一页
-    currentPage.value = 1;
-    fetchData();
-};
+  currentPage.value = 1
+  fetchData()
+}
 
 const resetForm = () => {
-    Object.assign(form, { id: undefined, name: '', logo: '', link: '' });
-};
+  Object.assign(form, { id: undefined, name: '', logo: '', link: '', ownerUserId: null })
+}
 
 const handleCreate = () => {
-    resetForm();
-    isEditMode.value = false;
-    dialogVisible.value = true;
-};
+  if (!canCreate.value) return
+  resetForm()
+  isEditMode.value = false
+  dialogVisible.value = true
+}
 
 const handleEdit = (row: Member) => {
-    Object.assign(form, row);
-    isEditMode.value = true;
-    dialogVisible.value = true;
-};
+  Object.assign(form, row, { ownerUserId: row.owner_user_id ?? null })
+  isEditMode.value = true
+  dialogVisible.value = true
+}
 
-const triggerFileInput = () => {
-    if (!form.name?.trim()) {
-        ElMessage.warning('请先输入成员名称');
-        return;
-    }
-    fileInputRef.value?.click();
-};
+const beforeLogoUpload: UploadProps['beforeUpload'] = (rawFile) => {
+  if (!form.name?.trim()) {
+    ElMessage.warning('请先填写社团名称')
+    return false
+  }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(rawFile.type)) {
+    ElMessage.error('Logo 只能是 JPG、PNG 或 WebP 格式')
+    return false
+  }
+  if (rawFile.size / 1024 / 1024 >= 5) {
+    ElMessage.error('Logo 大小不能超过 5MB')
+    return false
+  }
+  return true
+}
 
-const handleFileChange = async (e: Event) => {
-    const input = e.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        ElMessage.error('Logo只能是 JPG, PNG, 或 WEBP 格式');
-        return;
-    }
-    if (file.size / 1024 / 1024 >= 5) {
-        ElMessage.error('Logo大小不能超过 5MB');
-        return;
-    }
-
-    uploadLoading.value = true;
-    try {
-        const fd = new FormData();
-        fd.append('image', file);
-        fd.append('memberName', form.name || '未命名');
-
-        const res = await apiClient.post('/members/upload-logo', fd, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        form.logo = res.data.filePath;
-        ElMessage.success('Logo上传并处理成功');
-    } catch (err: any) {
-        ElMessage.error(err?.response?.data?.message || 'Logo上传失败');
-    } finally {
-        uploadLoading.value = false;
-        input.value = '';
-    }
-};
+const uploadLogo = async (options: any) => {
+  uploadLoading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('image', options.file)
+    fd.append('memberName', form.name || '未命名')
+    const response = await apiClient.post('/members/upload-logo', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    form.logo = response.data.filePath
+    options.onSuccess?.(response.data)
+    ElMessage.success('Logo 上传成功')
+  } catch (error: any) {
+    options.onError?.(error)
+    ElMessage.error(error?.response?.data?.message || 'Logo 上传失败')
+  } finally {
+    uploadLoading.value = false
+  }
+}
 
 const handleSave = async () => {
-    try {
-        if (isEditMode.value) {
-            await apiClient.put(`/members/${form.id}`, form);
-            ElMessage.success('更新成功');
-        } else {
-            await apiClient.post('/members', form);
-            ElMessage.success('创建成功');
-        }
-        dialogVisible.value = false;
-        fetchData();
-    } catch (error) {
-        ElMessage.error('保存失败');
+  if (!form.name) return ElMessage.error('请填写社团名称')
+
+  try {
+    if (isEditMode.value) {
+      await apiClient.put(`/members/${form.id}`, {
+        name: form.name,
+        logo: form.logo,
+        link: form.link,
+        ownerUserId: form.ownerUserId,
+      })
+      ElMessage.success('社团已更新')
+    } else {
+      await apiClient.post('/members', {
+        name: form.name,
+        logo: form.logo,
+        link: form.link,
+        ownerUserId: form.ownerUserId,
+      })
+      ElMessage.success('社团已创建')
     }
-};
+    dialogVisible.value = false
+    fetchData()
+  } catch (error) {
+    ElMessage.error('保存失败')
+  }
+}
 
 const handleDelete = async (id: number) => {
-    try {
-        await apiClient.delete(`/members/${id}`);
-        ElMessage.success('删除成功');
-        fetchData();
-    } catch (error: any) {
-        ElMessage.error('删除失败');
-    }
-};
+  try {
+    await ElMessageBox.confirm('确定删除这个社团吗？此操作不可撤销。', '删除社团', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+    await apiClient.delete(`/members/${id}`)
+    ElMessage.success('社团已删除')
+    fetchData()
+  } catch (error: any) {
+    if (error !== 'cancel') ElMessage.error('删除失败')
+  }
+}
 </script>
 
 <style scoped>
-.page-card { background: var(--card-bg); }
-.controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-}
-.control-actions { display: flex; align-items: center; gap: 10px; }
-
-.logo-upload-row {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.member-logo {
+  display: block;
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--app-bg);
 }
 
-.logo-preview {
-    position: relative;
-    display: inline-block;
-    width: 178px;
-    height: 178px;
+.logo-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
 }
 
-.logo-preview img {
-    width: 178px;
-    height: 178px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid var(--el-border-color);
-    display: block;
+.logo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
 }
 
-.logo-preview .remove-btn {
-    position: absolute;
-    top: -8px;
-    right: -8px;
+.image-uploader .image {
+  width: 118px;
+  height: 118px;
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
-.upload-hint {
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
+.muted {
+  color: var(--muted-text);
 }
-
-.image-uploader {
-    width: 178px;
-    height: 178px;
-    border: 1px dashed var(--el-border-color);
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--el-transition-duration-fast);
-}
-
-.image-uploader:hover {
-    border-color: var(--el-color-primary);
-}
-
-.el-icon.image-uploader-icon {
-    font-size: 28px;
-    color: #8c939d;
-}
-</style>
-
-<style>
 </style>
