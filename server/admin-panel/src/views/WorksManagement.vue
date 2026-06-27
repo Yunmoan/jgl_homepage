@@ -24,12 +24,18 @@
           <el-option label="全部社团" value="all" />
           <el-option v-for="club in clubOptions" :key="club" :label="club" :value="club" />
         </el-select>
+        <el-select v-model="statusFilter" placeholder="状态" style="width: 140px">
+          <el-option label="全部状态" value="all" />
+          <el-option label="待审" value="pending" />
+          <el-option label="已通过" value="approved" />
+          <el-option label="已驳回" value="rejected" />
+        </el-select>
         <el-select v-model="featuredFilter" placeholder="精选" style="width: 140px">
           <el-option label="全部作品" value="all" />
           <el-option label="仅精选" value="featured" />
           <el-option label="未精选" value="normal" />
         </el-select>
-        <span class="filter-count">共 {{ filteredData.length }} 条，精选 {{ featuredCount }} 条</span>
+        <span class="filter-count">共 {{ filteredData.length }} 条，待审 {{ pendingCount }} 条，精选 {{ featuredCount }} 条</span>
       </div>
 
       <el-table :data="pagedData" v-loading="loading" border height="calc(100vh - 310px)">
@@ -49,6 +55,11 @@
         </el-table-column>
         <el-table-column prop="club" label="社团" min-width="140" />
         <el-table-column prop="submitter" label="提交人" min-width="120" />
+        <el-table-column prop="status" label="状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="statusTag(row.status)" effect="plain">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="链接" min-width="180">
           <template #default="{ row }">
             <el-link v-if="row.link" :href="row.link" target="_blank" type="primary" :underline="false">
@@ -66,9 +77,29 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="190" fixed="right">
+        <el-table-column label="操作" width="340" fixed="right">
           <template #default="{ row }">
             <el-button size="small" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+            <el-button
+              v-if="isAdmin"
+              size="small"
+              type="success"
+              plain
+              :disabled="row.status === 'approved'"
+              @click="updateStatus(row, 'approved')"
+            >
+              通过
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              size="small"
+              type="warning"
+              plain
+              :disabled="row.status === 'rejected'"
+              @click="updateStatus(row, 'rejected')"
+            >
+              驳回
+            </el-button>
             <el-button
               v-if="isAdmin"
               size="small"
@@ -125,6 +156,19 @@
         </el-form-item>
         <el-form-item label="社团">
           <el-select
+            v-if="isMember"
+            v-model="form.club"
+            placeholder="选择绑定社团或输入社团"
+            filterable
+            allow-create
+            default-first-option
+            clearable
+            style="width: 100%"
+          >
+            <el-option v-for="club in ownedClubs" :key="club.id" :label="club.name" :value="club.name" />
+          </el-select>
+          <el-select
+            v-else
             v-model="form.club"
             placeholder="选择或输入社团"
             filterable
@@ -136,9 +180,23 @@
             <el-option v-for="club in clubOptions" :key="club" :label="club" :value="club" />
           </el-select>
         </el-form-item>
+        <el-form-item v-if="isAdmin" label="审核状态">
+          <el-select v-model="form.status" style="width: 100%">
+            <el-option label="待审" value="pending" />
+            <el-option label="已通过" value="approved" />
+            <el-option label="已驳回" value="rejected" />
+          </el-select>
+        </el-form-item>
         <el-form-item v-if="isAdmin" label="精选">
           <el-switch v-model="form.featured" />
         </el-form-item>
+        <el-alert
+          v-else
+          title="作品保存后需要管理员审核，通过后才会展示在前台。"
+          type="info"
+          :closable="false"
+          show-icon
+        />
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -156,6 +214,8 @@ import { Delete, Edit, Plus, Refresh, Search } from '@element-plus/icons-vue'
 import type { UploadProps } from 'element-plus'
 
 type FeaturedFilter = 'all' | 'featured' | 'normal'
+type WorkStatus = 'pending' | 'approved' | 'rejected'
+type StatusFilter = 'all' | WorkStatus
 
 interface Work {
   id: number
@@ -165,7 +225,13 @@ interface Work {
   link: string
   club?: string
   featured?: number | boolean | string
+  status?: WorkStatus
   submitter?: string
+}
+
+interface OwnedClub {
+  id: number
+  name: string
 }
 
 const tableData = ref<Work[]>([])
@@ -174,9 +240,11 @@ const dialogVisible = ref(false)
 const isEditMode = ref(false)
 const keyword = ref('')
 const clubFilter = ref('all')
+const statusFilter = ref<StatusFilter>('all')
 const featuredFilter = ref<FeaturedFilter>('all')
 const currentPage = ref(1)
 const pageSize = ref(10)
+const ownedClubs = ref<OwnedClub[]>([])
 
 const form = reactive<Partial<Work>>({
   id: undefined,
@@ -186,6 +254,7 @@ const form = reactive<Partial<Work>>({
   link: '',
   club: '',
   featured: false,
+  status: 'pending',
 })
 
 function parseJwtRole(): string | null {
@@ -201,7 +270,9 @@ function parseJwtRole(): string | null {
   }
 }
 
-const isAdmin = computed(() => parseJwtRole() === 'admin')
+const currentRole = computed(() => parseJwtRole())
+const isAdmin = computed(() => currentRole.value === 'admin')
+const isMember = computed(() => currentRole.value === 'member')
 const dialogTitle = computed(() => (isEditMode.value ? '编辑作品' : '添加作品'))
 const uploadHeaders = computed(() => {
   const token = localStorage.getItem('token')
@@ -211,9 +282,13 @@ const uploadHeaders = computed(() => {
 const isFeatured = (value: Work['featured']) => value === true || value === 1 || value === '1'
 const formatImageUrl = (src?: string) => src || ''
 const previewImage = computed(() => formatImageUrl(form.imageUrl))
+const defaultOwnedClubName = computed(() => ownedClubs.value[0]?.name || '')
 
 const clubOptions = computed(() => {
   const set = new Set<string>()
+  ownedClubs.value.forEach((club) => {
+    if (club.name) set.add(club.name)
+  })
   tableData.value.forEach((work) => {
     if (work.club) set.add(work.club)
   })
@@ -221,6 +296,7 @@ const clubOptions = computed(() => {
 })
 
 const featuredCount = computed(() => tableData.value.filter((item) => isFeatured(item.featured)).length)
+const pendingCount = computed(() => tableData.value.filter((item) => item.status === 'pending').length)
 
 const filteredData = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
@@ -231,12 +307,13 @@ const filteredData = computed(() => {
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(kw))
     const hitClub = clubFilter.value === 'all' || item.club === clubFilter.value
+    const hitStatus = statusFilter.value === 'all' || item.status === statusFilter.value
     const featured = isFeatured(item.featured)
     const hitFeatured =
       featuredFilter.value === 'all' ||
       (featuredFilter.value === 'featured' && featured) ||
       (featuredFilter.value === 'normal' && !featured)
-    return hitKeyword && hitClub && hitFeatured
+    return hitKeyword && hitClub && hitStatus && hitFeatured
   })
 })
 
@@ -245,7 +322,7 @@ const pagedData = computed(() => {
   return filteredData.value.slice(start, start + pageSize.value)
 })
 
-watch([keyword, clubFilter, featuredFilter], () => {
+watch([keyword, clubFilter, statusFilter, featuredFilter], () => {
   currentPage.value = 1
 })
 
@@ -261,7 +338,19 @@ const fetchData = async () => {
   }
 }
 
-onMounted(fetchData)
+const fetchOwnedClubs = async () => {
+  if (!isMember.value) return
+  try {
+    const { data } = await apiClient.get('/members/mine')
+    ownedClubs.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    ownedClubs.value = []
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([fetchOwnedClubs(), fetchData()])
+})
 
 const resetForm = () => {
   Object.assign(form, {
@@ -270,8 +359,9 @@ const resetForm = () => {
     description: '',
     imageUrl: '',
     link: '',
-    club: '',
+    club: isMember.value ? defaultOwnedClubName.value : '',
     featured: false,
+    status: isAdmin.value ? 'approved' : 'pending',
   })
 }
 
@@ -282,7 +372,11 @@ const handleCreate = () => {
 }
 
 const handleEdit = (row: Work) => {
-  Object.assign(form, row, { featured: isFeatured(row.featured) })
+  Object.assign(form, row, {
+    club: row.club || (isMember.value ? defaultOwnedClubName.value : ''),
+    featured: isFeatured(row.featured),
+    status: row.status || 'pending',
+  })
   isEditMode.value = true
   dialogVisible.value = true
 }
@@ -309,23 +403,35 @@ const beforeImageUpload: UploadProps['beforeUpload'] = (rawFile) => {
 
 const handleSave = async () => {
   if (!form.title) return ElMessage.error('请填写作品标题')
+  if (!form.club) return ElMessage.error('请选择或填写社团')
 
   try {
     const payload = {
       ...form,
+      club: form.club,
       featured: form.featured ? 1 : 0,
     }
     if (isEditMode.value) {
       await apiClient.put(`/works/${form.id}`, payload)
-      ElMessage.success('作品已更新')
+      ElMessage.success(isAdmin.value ? '作品已更新' : '作品已更新，等待审核')
     } else {
       await apiClient.post('/works', payload)
-      ElMessage.success('作品已创建')
+      ElMessage.success(isAdmin.value ? '作品已创建' : '作品已提交审核')
     }
     dialogVisible.value = false
     fetchData()
   } catch (error) {
     ElMessage.error('保存失败')
+  }
+}
+
+const updateStatus = async (row: Work, status: WorkStatus) => {
+  try {
+    await apiClient.put(`/works/${row.id}/status`, { status })
+    row.status = status
+    ElMessage.success(`作品已${statusLabel(status)}`)
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.error || '审核状态更新失败')
   }
 }
 
@@ -353,6 +459,20 @@ const handleDelete = async (id: number) => {
     if (error !== 'cancel') ElMessage.error('删除失败')
   }
 }
+
+const statusTag = (status?: WorkStatus) =>
+  ({
+    pending: 'warning',
+    approved: 'success',
+    rejected: 'danger',
+  })[status || 'pending']
+
+const statusLabel = (status?: WorkStatus) =>
+  ({
+    pending: '待审',
+    approved: '已通过',
+    rejected: '已驳回',
+  })[status || 'pending']
 </script>
 
 <style scoped>

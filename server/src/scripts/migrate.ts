@@ -52,6 +52,49 @@ async function migrate() {
       }
     }
 
+    // Ensure works.status and review columns exist
+    const [worksStatus] = await connection.query(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME='works' AND COLUMN_NAME='status'",
+    )
+    if (Array.isArray(worksStatus) && worksStatus.length === 0) {
+      try {
+        await connection.query(
+          "ALTER TABLE works ADD COLUMN status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved'",
+        )
+        console.log('Added missing column works.status')
+      } catch (err: any) {
+        if (err?.code !== 'ER_DUP_FIELDNAME') {
+          console.warn('Attempt to add works.status failed:', err)
+        }
+      }
+    }
+    const [worksReviewedBy] = await connection.query(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME='works' AND COLUMN_NAME='reviewed_by'",
+    )
+    if (Array.isArray(worksReviewedBy) && worksReviewedBy.length === 0) {
+      try {
+        await connection.query('ALTER TABLE works ADD COLUMN reviewed_by INT NULL')
+        console.log('Added missing column works.reviewed_by')
+      } catch (err: any) {
+        if (err?.code !== 'ER_DUP_FIELDNAME') {
+          console.warn('Attempt to add works.reviewed_by failed:', err)
+        }
+      }
+    }
+    const [worksReviewedAt] = await connection.query(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME='works' AND COLUMN_NAME='reviewed_at'",
+    )
+    if (Array.isArray(worksReviewedAt) && worksReviewedAt.length === 0) {
+      try {
+        await connection.query('ALTER TABLE works ADD COLUMN reviewed_at DATETIME NULL')
+        console.log('Added missing column works.reviewed_at')
+      } catch (err: any) {
+        if (err?.code !== 'ER_DUP_FIELDNAME') {
+          console.warn('Attempt to add works.reviewed_at failed:', err)
+        }
+      }
+    }
+
     // Ensure news.status column exists
     const [newsStatus] = await connection.query(
       "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME='news' AND COLUMN_NAME='status'",

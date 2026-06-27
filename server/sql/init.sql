@@ -69,7 +69,10 @@ CREATE TABLE IF NOT EXISTS works (
   link VARCHAR(255),
   club VARCHAR(255),
   featured TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'approved',
   user_id INT,
+  reviewed_by INT,
+  reviewed_at DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
