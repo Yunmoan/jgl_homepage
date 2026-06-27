@@ -394,8 +394,8 @@ const clearFormError = () => {
 }
 
 const validateForm = () => {
-  if (!form.username || !form.password || !form.confirmPassword || !form.clubName || !form.contactName) {
-    return '请填写账号、密码、确认密码、社团名称和联系人'
+  if (!form.username || !form.password || !form.confirmPassword || !form.clubName || !form.contactName || !form.clubLogo) {
+    return '请填写账号、密码、确认密码、社团名称、联系人并上传社团 Logo'
   }
   if (!usernamePattern.test(form.username)) {
     return '账号需为 4-32 位，仅限英文字母、数字、下划线或短横线，并且必须以英文字母开头'

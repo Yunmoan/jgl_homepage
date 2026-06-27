@@ -10,7 +10,7 @@ const router = Router()
 const roles = ['admin', 'editor', 'viewer', 'member'] as const
 const approvalRoles = ['member', 'editor', 'admin'] as const
 const statuses = ['pending', 'approved', 'rejected', 'disabled', 'withdrawn'] as const
-const reviewStatuses = ['approved', 'rejected', 'disabled'] as const
+const reviewStatuses = ['approved', 'rejected', 'disabled', 'withdrawn'] as const
 const csvUpload = multer({ storage: multer.memoryStorage() })
 
 const userSelectFields = `id, username, role, nickname, club_name, club_logo, club_link, contact_name, contact_qq, club_group_qq,
@@ -120,9 +120,15 @@ router.put('/me/profile', protect, async (req: any, res) => {
 // @access  Private (Self)
 router.put('/me/application', protect, async (req: any, res) => {
   const { updates, params } = buildProfileUpdates(req.body)
+  const safeClubName = cleanString(req.body?.clubName)
+  const safeContactName = cleanString(req.body?.contactName)
+  const safeClubLogo = cleanString(req.body?.clubLogo)
 
   if (!updates.length) {
     return res.status(400).json({ error: 'No fields to update' })
+  }
+  if (!safeClubName || !safeContactName || !safeClubLogo) {
+    return res.status(400).json({ error: 'clubName, contactName, and clubLogo are required' })
   }
 
   try {
@@ -365,7 +371,7 @@ router.put('/:id/review', protect, authorize('admin'), async (req: any, res) => 
   const { status, reviewNote, role } = req.body as { status?: string; reviewNote?: string; role?: string }
 
   if (!isOneOf(status, reviewStatuses)) {
-    return res.status(400).json({ error: 'Review status must be approved, rejected, or disabled' })
+    return res.status(400).json({ error: 'Review status must be approved, rejected, disabled, or withdrawn' })
   }
   if (status === 'approved' && role !== undefined && !isOneOf(role, approvalRoles)) {
     return res.status(400).json({ error: 'Approved role must be member, editor, or admin' })

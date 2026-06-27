@@ -8,6 +8,7 @@
     "build": "tsc",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "db:migrate": "ts-node src/scripts/migrate.ts",
+    "db:import-members-history": "ts-node src/scripts/import_members_history.ts",
     "db:seed": "ts-node src/scripts/seed.ts",
     "db:add-works-club": "ts-node src/scripts/add_works_club.ts",
     "db:add-works-club:build": "node dist/scripts/add_works_club.js"

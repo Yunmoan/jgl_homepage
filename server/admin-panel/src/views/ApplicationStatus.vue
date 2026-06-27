@@ -82,7 +82,7 @@
     </el-card>
 
     <el-dialog v-model="editorVisible" title="修改申请资料" width="920px">
-      <ApplicationProfileForm :model-value="form" @update:model-value="Object.assign(form, $event)" />
+      <ApplicationProfileForm :model-value="form" require-logo @update:model-value="Object.assign(form, $event)" />
       <template #footer>
         <el-button @click="editorVisible = false">取消</el-button>
         <el-button type="primary" @click="saveApplication">保存并提交审核</el-button>
@@ -157,8 +157,8 @@ const openEditor = () => {
 }
 
 const saveApplication = async () => {
-  if (!form.clubName.trim() || !form.contactName.trim()) {
-    ElMessage.error('请填写社团名称和联系人')
+  if (!form.clubName.trim() || !form.contactName.trim() || !form.clubLogo.trim()) {
+    ElMessage.error('请填写社团名称、联系人并上传社团 Logo')
     return
   }
   try {

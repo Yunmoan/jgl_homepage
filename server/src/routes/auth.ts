@@ -75,9 +75,9 @@ router.post('/register', registerLimiter, async (req, res) => {
   const safeReason = cleanString(applicationReason)
   const safeNickname = cleanString(nickname)
 
-  if (!safeUsername || !password || !safeClubName || !safeContactName) {
+  if (!safeUsername || !password || !safeClubName || !safeContactName || !safeClubLogo) {
     return res.status(400).json({
-      error: 'username, password, clubName, and contactName are required',
+      error: 'username, password, clubName, contactName, and clubLogo are required',
     })
   }
 

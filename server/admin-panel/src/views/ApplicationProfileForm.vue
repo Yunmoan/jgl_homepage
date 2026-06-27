@@ -47,7 +47,7 @@
     <section class="form-section">
       <div class="section-head">
         <span>03</span>
-        <strong>社团 Logo</strong>
+        <strong>社团 Logo <em v-if="requireLogo">*</em></strong>
       </div>
       <div class="logo-field">
         <div class="logo-preview" :class="{ empty: !modelValue.clubLogo }">
@@ -63,7 +63,7 @@
               移除
             </el-button>
           </div>
-          <p>支持 JPG、PNG、WebP，上传前会裁切成方形 WebP。也可以留空后由管理员补充。</p>
+          <p>{{ requireLogo ? 'Logo 为申请必填项。' : '可留空后由管理员补充。' }}支持 JPG、PNG、WebP，上传前会裁切成方形 WebP。</p>
         </div>
       </div>
     </section>
@@ -128,7 +128,9 @@ interface ApplicationProfileFormModel {
 
 const props = defineProps<{
   modelValue: ApplicationProfileFormModel
+  requireLogo?: boolean
 }>()
+const requireLogo = props.requireLogo ?? false
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: ApplicationProfileFormModel): void
@@ -264,6 +266,11 @@ onBeforeUnmount(cleanupLogo)
 .section-head strong {
   color: var(--el-text-color-primary);
   font-size: 15px;
+}
+
+.section-head em {
+  color: var(--el-color-danger);
+  font-style: normal;
 }
 
 .form-grid {
