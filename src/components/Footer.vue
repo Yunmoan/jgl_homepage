@@ -50,7 +50,8 @@
       </div>
       <hr class="footer-divider">
       <div class="footer-bottom">
-        <p>&copy; {{ currentYear }} 河北东方高校联合会. 保留所有权利.
+        <p>&copy; {{ currentYear }} 河北东方高校联合会. 保留所有权利. · <a href="//beian.miit.gov.cn"
+            target="_blank">津ICP备2025038348号-3</a>
           <br />
           Designed with ♥<a href="https://github.com/Yunmoan" target="_blank">云默安</a> | Developed by <a
             href="https://www.zyghit.cn" target="_blank">ZGIT Network</a>
