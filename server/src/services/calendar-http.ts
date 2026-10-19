@@ -23,10 +23,14 @@ interface RequestOptions {
   deadline?: number
 }
 
+// The thonly.cc proxy relays a Google Sheets batchGet that routinely takes tens of seconds;
+// a short deadline fails over to the next route before the upstream has any chance to answer.
+const REQUEST_DEADLINE_MS = 30000
+
 // Resolve, validate and pin the address used by the connection. Redirects repeat validation.
 async function requestPublicText(address: string, options: RequestOptions): Promise<string> {
   const redirects = options.redirects || 0
-  const deadline = options.deadline || Date.now() + 10000
+  const deadline = options.deadline || Date.now() + REQUEST_DEADLINE_MS
   if (redirects > 3 || Date.now() >= deadline) throw new Error('日历源响应超时或重定向过多')
   const url = new URL(address)
   if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443')) throw new Error('日历源必须使用公网 HTTPS 地址')
@@ -74,7 +78,11 @@ export async function fetchPublicText(address: string, headers: Record<string,st
   return requestPublicText(address, {headers})
 }
 
-export async function fetchPublicJson(address: string, redirects = 0, deadline = Date.now() + 10000): Promise<unknown> {
+export async function fetchPublicJson(
+  address: string,
+  redirects = 0,
+  deadline = Date.now() + REQUEST_DEADLINE_MS,
+): Promise<unknown> {
   const text = await requestPublicText(address, {
     headers: {'Accept': 'application/json'},
     redirects,

@@ -1,6 +1,8 @@
 export type Participation = 'undecided' | 'participating' | 'not_participating'
-// "未参展" is derived for display only; it is never stored or accepted by the API.
-export type DisplayParticipation = Participation | 'not_participated'
+// "not_participated" (未参展已结束) is derived for display only; it is never stored or
+// accepted by the API. The legacy "not_participating" (不参展) value is no longer offered
+// and merges into it on display.
+export type DisplayParticipation = Exclude<Participation, 'not_participating'> | 'not_participated'
 
 export interface Exhibition {
   id: number | string
@@ -78,30 +80,40 @@ export const exhibitionsInMonth = (events: Exhibition[], year: number, month: nu
 }
 
 export const participationLabels: Record<DisplayParticipation, string> = {
-  undecided: '参展待定',
+  undecided: '待定',
   participating: '高联参展',
-  not_participating: '不参展',
-  not_participated: '未参展',
+  not_participated: '未参展已结束',
 }
 
-// Values that forms may store; the derived "未参展" state is never selectable.
-export const selectableParticipationLabels: Record<Participation, string> = {
-  undecided: '参展待定',
+// Values that forms may select; the legacy "不参展" option has been removed.
+export const selectableParticipationLabels: Record<
+  Exclude<Participation, 'not_participating'>,
+  string
+> = {
+  undecided: '待定',
   participating: '高联参展',
-  not_participating: '不参展',
 }
 
 export const todayInChina = () => new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10)
 
-// An exhibition that has already ended while its attendance was never confirmed
-// (no binding, still "参展待定") is displayed as "未参展".
+// Any exhibition that has not ended without a decision displays as "待定"; once it ends
+// while still undecided (or carries the legacy "不参展" value) it becomes "未参展已结束".
 export const displayParticipation = (
   event: Pick<Exhibition, 'participation' | 'end_date'>,
   today = todayInChina(),
+): DisplayParticipation => {
+  if (event.participation === 'participating') return 'participating'
+  if (event.participation !== 'undecided') return 'not_participated'
+  return event.end_date >= today ? 'undecided' : 'not_participated'
+}
+
+// A binding's event snapshot predates the binding itself, so the snapshot's participation
+// field is stale; derive the label from the binding's own plan with the same rules.
+export const displayBindingParticipation = (
+  binding: Pick<ExhibitionBinding, 'participation' | 'event'>,
+  today = todayInChina(),
 ): DisplayParticipation =>
-  event.participation === 'undecided' && event.end_date < today
-    ? 'not_participated'
-    : event.participation
+  displayParticipation({ ...binding.event, participation: binding.participation }, today)
 
 export const formatExhibitionDates = (event: Pick<Exhibition, 'start_date' | 'end_date'>) => {
   const format = (date: string) => date.replace(/-/g, '.')

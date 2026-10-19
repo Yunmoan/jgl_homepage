@@ -4,7 +4,7 @@
     <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon />
     <el-table :data="bindings" v-loading="loading" empty-text="暂无参展绑定，请从日历或活动列表选择来源活动">
       <el-table-column label="已绑定活动" min-width="240"><template #default="{row}"><strong>{{ currentEvent(row)?.title || row.event.title }}</strong><p class="binding-meta">{{ formatExhibitionDates(currentEvent(row) || row.event) }} · {{ row.event.source_label }}</p><el-tag v-if="!currentEvent(row)" type="warning" size="small">当前来源中未找到，原备注已保留</el-tag></template></el-table-column>
-      <el-table-column label="参展计划" width="120"><template #default="{row}">{{ participationLabels[displayParticipation(row.event)] }}</template></el-table-column>
+      <el-table-column label="参展计划" width="120"><template #default="{row}">{{ participationLabels[displayBindingParticipation(row)] }}</template></el-table-column>
       <el-table-column prop="booth" label="摊位" min-width="100" />
       <el-table-column prop="participation_notes" label="参展信息" min-width="220" show-overflow-tooltip />
       <el-table-column label="操作" width="210"><template #default="{row}"><el-button link type="primary" @click="openBinding(row)">编辑 / 重新绑定</el-button><el-button link type="danger" @click="remove(row)">解除</el-button></template></el-table-column>
@@ -28,7 +28,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import apiClient from '../api'
 import { getErrorMessage } from '../feedback'
 import {
-  displayParticipation,
+  displayBindingParticipation,
   formatExhibitionDates,
   participationLabels,
   selectableParticipationLabels,

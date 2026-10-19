@@ -2,7 +2,9 @@ import axios from 'axios'
 
 const apiClient = axios.create({
   baseURL: '/api', // Using Vite proxy
-  timeout: 20000,
+  // Calendar source refreshes relay through the slow thonly.cc proxy and can legitimately
+  // take a couple of minutes; the client must outlast the server's upstream deadline.
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },

@@ -12,7 +12,8 @@ vm.runInNewContext(
   }).outputText,
   moduleContext,
 )
-const { indexExhibitionDays, formatExhibitionDates, exhibitionsInMonth } = moduleContext.exports
+const { indexExhibitionDays, formatExhibitionDates, exhibitionsInMonth, displayParticipation } =
+  moduleContext.exports
 const event = {
   id: 1,
   title: '展会',
@@ -45,6 +46,25 @@ test('date labels preserve date-only values without timezone shifts', () => {
   assert.equal(
     formatExhibitionDates({ start_date: '2026-12-31', end_date: '2027-01-02' }),
     '2026.12.31 — 2027.01.02',
+  )
+})
+
+test('undecided events stay 待定 until they end, then become 未参展已结束', () => {
+  const undecided = { participation: 'undecided', end_date: '2026-10-31' }
+  assert.equal(displayParticipation(undecided, '2026-10-01'), 'undecided')
+  assert.equal(displayParticipation({ ...undecided, binding_id: 7 }, '2026-10-01'), 'undecided')
+  assert.equal(displayParticipation(undecided, '2026-11-01'), 'not_participated')
+  assert.equal(
+    displayParticipation({ ...undecided, binding_id: 7 }, '2026-11-01'),
+    'not_participated',
+  )
+  assert.equal(
+    displayParticipation({ ...undecided, participation: 'participating' }, '2026-11-01'),
+    'participating',
+  )
+  assert.equal(
+    displayParticipation({ ...undecided, participation: 'not_participating' }, '2026-10-01'),
+    'not_participated',
   )
 })
 

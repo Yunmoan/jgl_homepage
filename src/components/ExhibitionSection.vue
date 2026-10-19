@@ -4,8 +4,14 @@
       <component :is="preview ? 'h2' : 'h1'" class="page-title">展会日历 / CALENDAR</component>
       <div class="calendar-toolbar">
         <div v-if="isMonthView" class="current-month-label">
-          <strong>{{ year }} 年 {{ displayMonth }} 月</strong>
-          <span>{{ homepage.mode === 'fixed_month' ? '展会安排' : '本月展会' }}</span>
+          <button type="button" class="month-nav" aria-label="上个月" @click="changeMonth(-1)">
+            ‹
+          </button>
+          <strong>{{ year }} 年 {{ viewMonth }} 月</strong>
+          <button type="button" class="month-nav" aria-label="下个月" @click="changeMonth(1)">
+            ›
+          </button>
+          <span>{{ monthSubtitle }}</span>
         </div>
         <div v-else class="year-switcher">
           <button type="button" :disabled="year <= 1900" aria-label="上一年" @click="year--">
@@ -52,7 +58,7 @@
         <p v-if="loading" class="loading-message" role="status">正在加载展会日历…</p>
         <ExhibitionCalendar
           :year="year"
-          :month="isMonthView ? displayMonth : undefined"
+          :month="isMonthView ? viewMonth : undefined"
           :events="filteredEvents"
           :selected-date="selectedDate"
           :disabled="loading"
@@ -78,7 +84,7 @@
             selectedDate
               ? `${selectedDate.replace(/-/g, '.')} 的展会`
               : isMonthView
-                ? `${displayMonth}月展会`
+                ? `${viewMonth}月展会`
                 : '全年展会'
           }}<span>{{ listedEvents.length }} 场</span>
         </h3>
@@ -191,6 +197,35 @@ const displayMonth = computed(() =>
       : today.slice(5, 7),
   ),
 )
+// The homepage calendar can page across months; it follows the configured month until the
+// visitor navigates, and follows the configuration again whenever it changes.
+const viewMonth = ref(displayMonth.value)
+watch(displayMonth, (month) => {
+  viewMonth.value = month
+})
+const monthSubtitle = computed(() =>
+  viewMonth.value === displayMonth.value
+    ? homepage.value.mode === 'fixed_month'
+      ? '展会安排'
+      : '本月展会'
+    : '展会安排',
+)
+function changeMonth(step: number) {
+  if ((step < 0 && year.value <= 1900) || (step > 0 && year.value >= 2199)) {
+    viewMonth.value = step < 0 ? 1 : 12
+    return
+  }
+  const next = viewMonth.value + step
+  if (next < 1) {
+    year.value -= 1
+    viewMonth.value = 12
+  } else if (next > 12) {
+    year.value += 1
+    viewMonth.value = 1
+  } else {
+    viewMonth.value = next
+  }
+}
 const queryYear = Number(route.query.year)
 const year = ref(
   !props.preview && Number.isInteger(queryYear) && queryYear >= 1900 && queryYear <= 2199
@@ -234,7 +269,7 @@ const calendarLink = computed(() => ({
 }))
 const filteredEvents = computed(() =>
   (isMonthView.value
-    ? exhibitionsInMonth(events.value, year.value, displayMonth.value)
+    ? exhibitionsInMonth(events.value, year.value, viewMonth.value)
     : events.value
   ).filter(
     (event) => !participation.value || displayParticipation(event) === participation.value,
@@ -382,6 +417,13 @@ initialize()
 .current-month-label span {
   color: #b9c9da;
   font-size: 0.8rem;
+}
+.current-month-label .month-nav {
+  align-self: center;
+  min-width: 32px;
+  padding: 0.2rem 0.6rem;
+  font-size: 1rem;
+  line-height: 1.4;
 }
 button,
 select {
