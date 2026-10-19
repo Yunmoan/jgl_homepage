@@ -34,7 +34,7 @@
               @focus="openDetails(day.date, $event)" @blur="scheduleClose" @keydown.esc="dismissDetails"
               @click="selectDay(day.date, $event)">
               <span class="date-number">{{ day.number }}</span>
-              <span v-if="month !== undefined && day.events.length" class="schedule-tag"
+              <span v-if="month !== undefined && day.participating" class="schedule-tag"
                 >有日程</span
               >
               <span v-if="month !== undefined && day.events.length" class="day-events">

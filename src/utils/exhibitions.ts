@@ -96,8 +96,9 @@ export const selectableParticipationLabels: Record<
 
 export const todayInChina = () => new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10)
 
-// Any exhibition that has not ended without a decision displays as "待定"; once it ends
-// while still undecided (or carries the legacy "不参展" value) it becomes "未参展已结束".
+// A confirmed participation is permanent — it still reads "高联参展" after the event ends.
+// Only undecided exhibitions derive their display state from the end date: they stay
+// "待定" until the event ends, then become "未参展已结束" (legacy "不参展" merges there).
 export const displayParticipation = (
   event: Pick<Exhibition, 'participation' | 'end_date'>,
   today = todayInChina(),
