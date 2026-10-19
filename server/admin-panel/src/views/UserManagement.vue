@@ -75,7 +75,7 @@
             <el-button v-if="row.status !== 'disabled'" size="small" type="info" @click="openReview(row, 'disabled')">
               禁用
             </el-button>
-            <el-popconfirm title="确认删除该账号吗？" @confirm="remove(row.id)">
+            <el-popconfirm title="确认删除该账号吗？删除后无法恢复。" confirm-button-text="删除" cancel-button-text="取消" @confirm="remove(row.id)">
               <template #reference>
                 <el-button size="small" type="danger" plain>删除</el-button>
               </template>
@@ -166,6 +166,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage } from '@/feedback'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
@@ -235,7 +236,7 @@ const loadData = async () => {
     const { data } = await apiClient.get<UserRow[]>('/users')
     allData.value = data || []
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '加载账号列表失败')
+    ElMessage.error(getErrorMessage(error, "加载账号列表失败"))
   } finally {
     loading.value = false
   }
@@ -299,7 +300,7 @@ const submitReview = async () => {
     reviewVisible.value = false
     await loadData()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '更新审核失败')
+    ElMessage.error(getErrorMessage(error, "更新审核失败"))
   }
 }
 
@@ -408,11 +409,11 @@ const saveEditor = async () => {
         status: editorForm.status,
       })
     }
-    ElMessage.success('保存成功')
+    ElMessage.success('账号资料已保存')
     editorVisible.value = false
     await loadData()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '保存失败')
+    ElMessage.error(getErrorMessage(error, "账号资料保存失败，请稍后重试"))
   }
 }
 
@@ -445,7 +446,7 @@ const submitReset = async () => {
     ElMessage.success('密码已重置')
     resetVisible.value = false
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '重置失败')
+    ElMessage.error(getErrorMessage(error, "重置失败"))
   }
 }
 
@@ -454,7 +455,7 @@ const updateRole = async (row: UserRow) => {
     await apiClient.put(`/users/${row.id}/role`, { role: row.role })
     ElMessage.success('角色已更新')
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '角色更新失败')
+    ElMessage.error(getErrorMessage(error, "角色更新失败"))
     await loadData()
   }
 }
@@ -462,10 +463,10 @@ const updateRole = async (row: UserRow) => {
 const remove = async (id: number) => {
   try {
     await apiClient.delete(`/users/${id}`)
-    ElMessage.success('已删除')
+    ElMessage.success('账号已删除')
     await loadData()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '删除失败')
+    ElMessage.error(getErrorMessage(error, "账号资料删除失败，请刷新列表后重试"))
   }
 }
 </script>

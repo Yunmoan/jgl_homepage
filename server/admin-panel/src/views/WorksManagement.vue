@@ -146,7 +146,7 @@
             :show-file-list="false"
             :on-success="handleImageSuccess"
             :before-upload="beforeImageUpload"
-          >
+           :on-error="showUploadError">
             <img v-if="form.imageUrl" :src="previewImage" class="image" />
             <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
           </el-upload>
@@ -207,6 +207,8 @@
 </template>
 
 <script setup lang="ts">
+import { showUploadError } from '@/feedback'
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import apiClient from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -332,7 +334,7 @@ const fetchData = async () => {
     const { data } = await apiClient.get('/works')
     tableData.value = data || []
   } catch (error) {
-    ElMessage.error('获取作品列表失败')
+    ElMessage.error(getErrorMessage(error, "获取作品列表失败"))
   } finally {
     loading.value = false
   }
@@ -421,7 +423,7 @@ const handleSave = async () => {
     dialogVisible.value = false
     fetchData()
   } catch (error) {
-    ElMessage.error('保存失败')
+    ElMessage.error(getErrorMessage(error, "作品保存失败，请稍后重试"))
   }
 }
 
@@ -429,9 +431,9 @@ const updateStatus = async (row: Work, status: WorkStatus) => {
   try {
     await apiClient.put(`/works/${row.id}/status`, { status })
     row.status = status
-    ElMessage.success(`作品已${statusLabel(status)}`)
+    ElMessage.success(`作品状态已更新为「${statusLabel(status)}」`)
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '审核状态更新失败')
+    ElMessage.error(getErrorMessage(error, "审核状态更新失败"))
   }
 }
 
@@ -441,7 +443,7 @@ const handleToggleFeatured = async (row: Work, value: boolean) => {
     row.featured = value
     ElMessage.success(value ? '已设为精选' : '已取消精选')
   } catch (error) {
-    ElMessage.error('精选状态更新失败')
+    ElMessage.error(getErrorMessage(error, "精选状态更新失败"))
   }
 }
 
@@ -456,7 +458,7 @@ const handleDelete = async (id: number) => {
     ElMessage.success('作品已删除')
     fetchData()
   } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
+    if (!isDialogDismissed(error)) ElMessage.error(getErrorMessage(error, "作品删除失败，请刷新列表后重试"))
   }
 }
 

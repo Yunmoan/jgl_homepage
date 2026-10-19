@@ -77,7 +77,7 @@
             :show-file-list="false"
             :on-success="handleImageSuccess"
             :before-upload="beforeImageUpload"
-          >
+           :on-error="showUploadError">
             <img v-if="form.logo" :src="formatLogoUrl(form.logo)" class="image" />
             <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
           </el-upload>
@@ -95,6 +95,8 @@
 </template>
 
 <script setup lang="ts">
+import { showUploadError } from '@/feedback'
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import apiClient from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -154,7 +156,7 @@ const fetchData = async () => {
     const response = await apiClient.get('/friend-links')
     tableData.value = response.data || []
   } catch (error) {
-    ElMessage.error('获取友情链接失败')
+    ElMessage.error(getErrorMessage(error, "获取友情链接失败"))
   } finally {
     loading.value = false
   }
@@ -211,7 +213,7 @@ const handleSave = async () => {
     dialogVisible.value = false
     fetchData()
   } catch (error) {
-    ElMessage.error('保存失败')
+    ElMessage.error(getErrorMessage(error, "友情链接保存失败，请稍后重试"))
   }
 }
 
@@ -226,7 +228,7 @@ const handleDelete = async (id: number) => {
     ElMessage.success('链接已删除')
     fetchData()
   } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
+    if (!isDialogDismissed(error)) ElMessage.error(getErrorMessage(error, "友情链接删除失败，请刷新列表后重试"))
   }
 }
 </script>

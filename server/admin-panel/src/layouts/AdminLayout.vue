@@ -141,11 +141,14 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage } from '@/feedback'
+import { isAxiosError } from 'axios'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import apiClient from '@/api'
 import {
+  Calendar,
   ChatDotRound,
   Clock,
   DataBoard,
@@ -196,6 +199,7 @@ const menuItems: MenuItem[] = [
     roles: ['admin', 'editor', 'member'],
     children: [
       { label: '新闻', index: '/admin/news', icon: Notification, roles: ['admin', 'editor', 'member'] },
+      { label: '展会日历', index: '/admin/exhibitions', icon: Calendar, roles: ['admin'] },
       { label: '作品', index: '/admin/works', icon: Tickets, roles: ['admin', 'editor', 'member'] },
       { label: '成员', index: '/admin/members', icon: User, roles: ['admin', 'editor'] },
       { label: '历程', index: '/admin/history', icon: Clock, roles: ['admin', 'editor'] },
@@ -214,6 +218,7 @@ const menuItems: MenuItem[] = [
       { label: '公告', index: '/admin/announcements', icon: Notification, roles: ['admin', 'editor'] },
       { label: '友链', index: '/admin/friend-links', icon: LinkIcon, roles: ['admin', 'editor'] },
       { label: '系统信息', index: '/admin/system-info', icon: InfoFilled, roles: ['admin', 'editor', 'member'] },
+      { label: '系统设置', index: '/admin/system-settings', icon: Setting, roles: ['admin'] },
     ],
   },
 ]
@@ -280,11 +285,10 @@ const loadMe = async () => {
     const { data } = await apiClient.get('/users/me')
     me.value = data
     role.value = validRoles.includes(data?.role) ? data.role : parseRole()
-  } catch {
-    me.value = null
-    role.value = null
-    localStorage.removeItem('token')
-    router.push('/login')
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 401) return
+    role.value = parseRole()
+    ElMessage.error(getErrorMessage(error, '账号信息加载失败，请稍后刷新重试'))
   }
 }
 
@@ -333,7 +337,7 @@ const submitProfile = async () => {
     profileVisible.value = false
     await loadMe()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '保存失败')
+    ElMessage.error(getErrorMessage(error, "保存失败"))
   }
 }
 
@@ -349,7 +353,7 @@ const openChangePwd = () => {
 
 const submitChangePwd = async () => {
   if (!pwdForm.oldPassword || !pwdForm.newPassword) {
-    return ElMessage.error('请填写完整')
+    return ElMessage.error('请输入原密码和新密码')
   }
   if (pwdForm.newPassword.length < 6) {
     return ElMessage.error('新密码至少 6 位')
@@ -365,7 +369,7 @@ const submitChangePwd = async () => {
     ElMessage.success('密码已修改')
     pwdVisible.value = false
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '修改失败')
+    ElMessage.error(getErrorMessage(error, "修改失败"))
   }
 }
 

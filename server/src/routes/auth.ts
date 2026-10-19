@@ -20,14 +20,14 @@ interface User extends RowDataPacket {
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: 'Too many login attempts from this IP, please try again after 15 minutes',
+  message: { error: '登录尝试过于频繁，请在 15 分钟后重试' },
   standardHeaders: true,
   legacyHeaders: false,
 })
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
-  message: 'Too many registration attempts from this IP, please try again later',
+  message: { error: '申请提交过于频繁，请在 1 小时后重试' },
   standardHeaders: true,
   legacyHeaders: false,
 })
@@ -75,17 +75,17 @@ router.post('/register', registerLimiter, async (req, res) => {
   const safeReason = cleanString(applicationReason)
   const safeNickname = cleanString(nickname)
 
-  if (!safeUsername || !password || !safeClubName || !safeContactName || !safeClubLogo) {
+  if (!safeUsername || typeof password !== 'string' || !password || !safeClubName || !safeContactName || !safeClubLogo) {
     return res.status(400).json({
-      error: 'username, password, clubName, contactName, and clubLogo are required',
+      error: '请填写账号、密码、社团名称和联系人，并上传社团 Logo',
     })
   }
 
   if (password.length < 8) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters' })
+    return res.status(400).json({ error: '密码至少需要 8 位' })
   }
   if (confirmPassword !== undefined && password !== confirmPassword) {
-    return res.status(400).json({ error: 'Password confirmation does not match' })
+    return res.status(400).json({ error: '两次输入的密码不一致，请重新确认' })
   }
   if (!isValidUsername(safeUsername)) {
     return res.status(400).json({ error: usernameRuleText })
@@ -105,7 +105,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     if (Number(pendingByIp?.[0]?.count || 0) >= 3) {
       return res.status(429).json({
         error:
-          'This IP already has too many pending applications. Please wait for review or log in to manage an existing application.',
+          '当前网络已有多份申请待审核，请等待审核结果，或登录已有账号查看申请进度',
       })
     }
 
@@ -113,7 +113,7 @@ router.post('/register', registerLimiter, async (req, res) => {
       safeUsername,
     ])
     if (Array.isArray(existingUsers) && existingUsers.length > 0) {
-      return res.status(409).json({ error: 'Username already exists' })
+      return res.status(409).json({ error: '该账号已被使用，请更换账号' })
     }
 
     const salt = await bcrypt.genSalt(10)
@@ -165,38 +165,39 @@ router.post('/register', registerLimiter, async (req, res) => {
       : undefined
 
     res.status(201).json({
-      message: 'Application submitted successfully. Please wait for review.',
+      message: '申请已提交，请等待管理员审核',
       status: 'pending',
       token: authToken,
     })
   } catch (error) {
     console.error('Error during registration:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
 router.post('/login', loginLimiter, async (req, res) => {
-  const { username, password } = req.body as { username?: string; password?: string }
+  const { username, password } = (req.body || {}) as { username?: string; password?: string }
+  const safeUsername = requiredString(username)
 
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' })
+  if (!safeUsername || typeof password !== 'string' || !password) {
+    return res.status(400).json({ error: '请输入账号和密码' })
   }
 
   try {
-    const [users] = await pool.query<User[]>('SELECT * FROM users WHERE username = ?', [username])
+    const [users] = await pool.query<User[]>('SELECT * FROM users WHERE username = ?', [safeUsername])
     const user = Array.isArray(users) ? users[0] : undefined
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' })
+      return res.status(401).json({ error: '账号或密码不正确，请检查后重试' })
     }
 
     const isMatch = await bcrypt.compare(password, user.password)
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' })
+      return res.status(401).json({ error: '账号或密码不正确，请检查后重试' })
     }
 
     if (user.status === 'disabled') {
-      return res.status(403).json({ error: 'Account has been disabled' })
+      return res.status(403).json({ error: '该账号已停用，如有疑问请联系管理员' })
     }
 
     const payload = { id: user.id, username: user.username, role: user.role }
@@ -205,7 +206,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.json({ token })
   } catch (error) {
     console.error('Error during login:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

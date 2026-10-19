@@ -55,7 +55,7 @@ router.get('/', async (req, res) => {
     })
   } catch (error) {
     console.error('Error fetching members:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -67,7 +67,7 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
   const safeName = requiredString(name)
 
   if (!safeName) {
-    return res.status(400).json({ error: 'Name is required' })
+    return res.status(400).json({ error: '请填写名称' })
   }
 
   try {
@@ -79,10 +79,10 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
     ])
     res
       .status(201)
-      .json({ message: 'Member created successfully', insertId: (result as any).insertId })
+      .json({ message: '社团已新增', insertId: (result as any).insertId })
   } catch (error) {
     console.error('Error creating member:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -95,7 +95,7 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
   const safeName = requiredString(name)
 
   if (!safeName) {
-    return res.status(400).json({ error: 'Name is required' })
+    return res.status(400).json({ error: '请填写名称' })
   }
 
   try {
@@ -105,7 +105,7 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
         [id, req.user.id],
       )
       if (!Array.isArray(ownedRows) || ownedRows.length === 0) {
-        return res.status(404).json({ error: 'Member not found or no permission' })
+        return res.status(404).json({ error: '该社团不存在，或当前账号没有编辑权限' })
       }
     }
 
@@ -122,13 +122,13 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
     )
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Member not found' })
+      return res.status(404).json({ error: '该社团不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'Member updated successfully' })
+    res.json({ message: '社团资料已保存' })
   } catch (error) {
     console.error('Error updating member:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -148,7 +148,7 @@ router.get('/mine', protect as any, authorize('member') as any, async (req: any,
     res.json(rows)
   } catch (error) {
     console.error('Error fetching owned members:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -177,12 +177,12 @@ router.post(
   upload.single('image'),
   async (req: any, res) => {
     if (!req.file) {
-      return res.status(400).json({ message: 'Please upload an image' })
+      return res.status(400).json({ message: '请先选择需要上传的图片' })
     }
 
     const { memberName } = req.body
     if (!memberName || !memberName.trim()) {
-      return res.status(400).json({ message: 'memberName is required' })
+      return res.status(400).json({ message: '请填写社团名称后再上传 Logo' })
     }
 
     const name = memberName.trim()
@@ -227,10 +227,10 @@ router.post(
       await fs.writeFile(filepath, withAlpha)
 
       const filePath = `/uploads/member_logos_circular/${filename}`
-      res.json({ message: 'Logo uploaded and processed successfully', filePath })
+      res.json({ message: '社团 Logo 已上传', filePath })
     } catch (error: any) {
       console.error('Error processing member logo:', error)
-      res.status(500).json({ message: `Failed to process logo: ${error.message}` })
+      res.status(500).json({ message: 'Logo 处理失败，请重新选择图片后重试' })
     }
   },
 )
@@ -241,19 +241,19 @@ router.post(
 router.delete('/logo', protect as any, authorize('admin', 'editor') as any, async (req, res) => {
   const { filepath } = req.body
   if (!filepath) {
-    return res.status(400).json({ message: 'filepath is required' })
+    return res.status(400).json({ message: '请选择需要移除的 Logo' })
   }
   const normalized = filepath.replace(/^\//, '')
   const fullPath = path.join(__dirname, '../../', normalized)
   try {
     await fs.unlink(fullPath)
-    res.json({ message: 'Logo deleted successfully' })
+    res.json({ message: 'Logo 已移除' })
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      return res.status(404).json({ message: 'File not found' })
+      return res.status(404).json({ message: '该文件不存在或已被移除，请刷新后重试' })
     }
     console.error('Error deleting logo:', error)
-    res.status(500).json({ message: 'Failed to delete logo' })
+    res.status(500).json({ message: 'Logo 移除失败，请稍后重试' })
   }
 })
 
@@ -267,13 +267,13 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
     const [result] = await pool.query('DELETE FROM members WHERE id = ?', [id])
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Member not found' })
+      return res.status(404).json({ error: '该社团不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'Member deleted successfully' })
+    res.json({ message: '社团已删除' })
   } catch (error) {
     console.error('Error deleting member:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

@@ -114,6 +114,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import apiClient from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -178,7 +179,7 @@ const fetchData = async () => {
     const response = await apiClient.get('/messages/all')
     tableData.value = response.data || []
   } catch (error) {
-    ElMessage.error('获取留言列表失败')
+    ElMessage.error(getErrorMessage(error, "获取留言列表失败"))
   } finally {
     loading.value = false
   }
@@ -225,7 +226,7 @@ const handleSave = async () => {
     dialogVisible.value = false
     fetchData()
   } catch (error) {
-    ElMessage.error('保存失败')
+    ElMessage.error(getErrorMessage(error, "留言保存失败，请稍后重试"))
   }
 }
 
@@ -234,9 +235,9 @@ const updateStatus = async (id: number, status: MessageStatus) => {
     await apiClient.put(`/messages/${id}/status`, { status })
     const row = tableData.value.find((item) => item.id === id)
     if (row) row.status = status
-    ElMessage.success(`留言已更新为${statusLabel(status)}`)
+    ElMessage.success(`留言状态已更新为「${statusLabel(status)}」`)
   } catch (error) {
-    ElMessage.error('状态更新失败')
+    ElMessage.error(getErrorMessage(error, "留言状态更新失败，请刷新后重试"))
   }
 }
 
@@ -251,8 +252,8 @@ const handleDelete = async (id: number) => {
     ElMessage.success('留言已删除')
     fetchData()
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+    if (!isDialogDismissed(error)) {
+      ElMessage.error(getErrorMessage(error, "留言删除失败，请刷新列表后重试"))
     }
   }
 }
@@ -270,16 +271,16 @@ const statusLabel = (status: MessageStatus) => {
 }
 
 const handleSuccess: UploadProps['onSuccess'] = (response) => {
-  ElMessage.success(response.message || '导入成功')
+  ElMessage.success(typeof response?.message === 'string' && /[\u3400-\u9fff]/.test(response.message) ? response.message : '留言已导入')
   fetchData()
 }
 
 const handleError: UploadProps['onError'] = (error) => {
   try {
     const response = JSON.parse(error.message)
-    ElMessage.error(response.error || '导入失败')
+    ElMessage.error(getErrorMessage(response, '留言导入失败，请检查文件格式后重试'))
   } catch {
-    ElMessage.error('导入失败，请检查文件格式')
+    ElMessage.error(getErrorMessage(error, '留言导入失败，请检查文件格式后重试'))
   }
 }
 

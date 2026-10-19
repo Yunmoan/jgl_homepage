@@ -145,13 +145,12 @@
                   :before-upload="beforeImageUpload"
                   :on-success="handleEditorImageSuccess"
                   multiple
-                >
+                 :on-error="showUploadError">
                   <el-button :icon="Upload">上传图片</el-button>
                 </el-upload>
                 <span class="dialog-tip">支持粘贴、拖拽和按钮上传，保存时会自动处理正文中的 base64 图片。</span>
               </div>
-              <v-md-editor
-                ref="editorRef"
+              <VMdEditor
                 v-model="form.content"
                 height="480px"
                 :on-upload-img="handleEditorUpload"
@@ -169,7 +168,7 @@
                 :show-file-list="false"
                 :on-success="handleCoverSuccess"
                 :before-upload="beforeImageUpload"
-              >
+               :on-error="showUploadError">
                 <img v-if="form.image" :src="form.image" class="cover-image" alt="" />
                 <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
               </el-upload>
@@ -195,11 +194,21 @@
 </template>
 
 <script setup lang="ts">
+import { showUploadError } from '@/feedback'
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Edit, Plus, Refresh, Search, Upload } from '@element-plus/icons-vue'
 import type { UploadProps } from 'element-plus'
 import apiClient from '@/api'
+import VMdEditor from '@kangc/v-md-editor'
+import '@kangc/v-md-editor/lib/style/base-editor.css'
+import vuepressTheme from '@kangc/v-md-editor/lib/theme/vuepress.js'
+import '@kangc/v-md-editor/lib/theme/style/vuepress.css'
+import 'prism-themes/themes/prism-one-dark.min.css'
+import Prism from 'prismjs'
+
+VMdEditor.use(vuepressTheme, { Prism })
 
 type NewsStatus = 'pending' | 'approved' | 'rejected'
 type StatusFilter = NewsStatus | 'all'
@@ -228,11 +237,12 @@ interface EditorArticle {
   tags: string[]
 }
 
-const tableData = ref<Required<Pick<NewsArticle, 'id' | 'title' | 'date' | 'author' | 'image' | 'summary' | 'content'>> & {
+type NewsRow = Required<Pick<NewsArticle, 'id' | 'title' | 'date' | 'author' | 'image' | 'summary' | 'content'>> & {
   submitter?: string
   status: NewsStatus
   tags: string[]
-}[]>([])
+}
+const tableData = ref<NewsRow[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const dialogVisible = ref(false)
@@ -243,7 +253,6 @@ const tagFilter = ref('all')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const me = ref<{ username: string; nickname?: string; role?: string } | null>(null)
-const editorRef = ref()
 
 const form = reactive<EditorArticle>({
   id: undefined,
@@ -340,7 +349,7 @@ const fetchNews = async () => {
     }))
   } catch (error) {
     console.error('Failed to fetch news:', error)
-    ElMessage.error('获取文章列表失败')
+    ElMessage.error(getErrorMessage(error, "获取文章列表失败"))
   } finally {
     loading.value = false
   }
@@ -490,14 +499,14 @@ const saveArticle = async () => {
       await apiClient.put(`/news/${form.id}`, payload)
       ElMessage.success('文章已更新')
     } else {
-      await apiClient.post('/news', payload)
-      ElMessage.success('文章已创建')
+      const { data } = await apiClient.post('/news', payload)
+      ElMessage.success(data.status === 'approved' ? '文章已发布' : '文章已提交，请等待管理员审核')
     }
 
     dialogVisible.value = false
     await fetchNews()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || error?.message || '保存失败')
+    ElMessage.error(getErrorMessage(error, "文章保存失败，请稍后重试"))
   } finally {
     saving.value = false
   }
@@ -508,9 +517,9 @@ const updateStatus = async (id: number, status: NewsStatus) => {
     await apiClient.put(`/news/${id}/status`, { status })
     const row = tableData.value.find((item) => item.id === id)
     if (row) row.status = status
-    ElMessage.success(`文章已${statusLabel(status)}`)
+    ElMessage.success(`文章状态已更新为「${statusLabel(status)}」`)
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '更新状态失败')
+    ElMessage.error(getErrorMessage(error, "文章状态更新失败，请刷新后重试"))
   }
 }
 
@@ -525,8 +534,8 @@ const handleDelete = async (id: number) => {
     ElMessage.success('文章已删除')
     await fetchNews()
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.response?.data?.error || '删除失败')
+    if (!isDialogDismissed(error)) {
+      ElMessage.error(getErrorMessage(error, "文章删除失败，请刷新列表后重试"))
     }
   }
 }

@@ -88,7 +88,7 @@
               :show-file-list="false"
               :on-success="handleImageSuccess"
               :before-upload="beforeImageUpload"
-            >
+             :on-error="showUploadError">
               <img v-if="form.image" :src="previewImage" class="image" />
               <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
             </el-upload>
@@ -110,6 +110,8 @@
 </template>
 
 <script setup lang="ts">
+import { showUploadError } from '@/feedback'
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import apiClient from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -175,8 +177,8 @@ const fetchData = async () => {
   try {
     const response = await apiClient.get('/fame-members')
     tableData.value = response.data || []
-  } catch {
-    ElMessage.error('获取名人堂列表失败')
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error, "获取名人堂列表失败"))
   } finally {
     loading.value = false
   }
@@ -232,7 +234,7 @@ const handleSave = async () => {
     dialogVisible.value = false
     fetchData()
   } catch (error: any) {
-    if (!error?.fields) ElMessage.error('保存失败')
+    if (!error?.fields) ElMessage.error(getErrorMessage(error, "名人堂成员保存失败，请稍后重试"))
   }
 }
 
@@ -247,7 +249,7 @@ const handleDelete = async (id: number) => {
     ElMessage.success('成员已删除')
     fetchData()
   } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
+    if (!isDialogDismissed(error)) ElMessage.error(getErrorMessage(error, "名人堂成员删除失败，请刷新列表后重试"))
   }
 }
 </script>

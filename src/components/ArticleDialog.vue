@@ -10,7 +10,7 @@
             <h2 v-if="article" class="dialog-title">{{ article.title }}</h2>
             <p v-if="article && article.date" class="dialog-date">{{ formattedDate }} · 作者：{{ article.author }}</p>
           </div>
-          <button class="close-button" @click="close" aria-label="Close dialog">&times;</button>
+          <button class="close-button" @click="close" aria-label="关闭文章窗口">&times;</button>
         </div>
         <div class="dialog-body" v-html="articleContent"></div>
       </div>

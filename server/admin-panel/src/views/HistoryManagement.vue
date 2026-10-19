@@ -92,7 +92,7 @@
             :show-file-list="false"
             :on-success="handleImageSuccess"
             :before-upload="beforeImageUpload"
-          >
+           :on-error="showUploadError">
             <img v-if="form.image" :src="form.image" class="image" />
             <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
           </el-upload>
@@ -114,6 +114,8 @@
 </template>
 
 <script setup lang="ts">
+import { showUploadError } from '@/feedback'
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import apiClient from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -187,8 +189,8 @@ const fetchData = async () => {
       ...item,
       dialog_data: normalizeDialogData(item.dialog_data),
     }))
-  } catch {
-    ElMessage.error('获取历史事件列表失败')
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error, "获取历史事件列表失败"))
   } finally {
     loading.value = false
   }
@@ -235,7 +237,7 @@ const handleSave = async () => {
   try {
     dialogData = JSON.parse(form.dialog_data || '{}')
   } catch {
-    return ElMessage.error('弹窗 JSON 格式不正确')
+    return ElMessage.error('弹窗内容格式不正确，请检查 JSON 格式后重试')
   }
 
   const payload = { ...form, dialog_data: dialogData }
@@ -249,8 +251,8 @@ const handleSave = async () => {
     }
     dialogVisible.value = false
     fetchData()
-  } catch {
-    ElMessage.error('保存失败')
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error, "历史事件保存失败，请稍后重试"))
   }
 }
 
@@ -265,7 +267,7 @@ const handleDelete = async (id: number) => {
     ElMessage.success('事件已删除')
     fetchData()
   } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
+    if (!isDialogDismissed(error)) ElMessage.error(getErrorMessage(error, "历史事件删除失败，请刷新列表后重试"))
   }
 }
 </script>

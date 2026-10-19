@@ -15,6 +15,9 @@ import usersRoutes from './routes/users'
 import uploadRoutes from './routes/upload'
 import announcementsRoutes from './routes/announcements'
 import systemRoutes from './routes/system'
+import exhibitionsRoutes from './routes/exhibitions'
+import { startCalendarRefresh } from './services/calendar-refresh'
+import { userFacingErrors } from './middleware/errors'
 import path from 'path'
 import { requestLogger, errorLogger, log } from './logger'
 import os from 'os'
@@ -68,6 +71,7 @@ app.use('/api/upload', uploadRoutes)
 
 // Announcements routes
 app.use('/api/announcements', announcementsRoutes)
+app.use('/api/exhibitions', exhibitionsRoutes)
 
 // System info
 app.use('/api/system', systemRoutes)
@@ -109,7 +113,7 @@ function calcCpuUsage(): number {
 app.get('/api', (_req, res) => {
   // 输出系统负载状态
   res.json({
-    message: 'API is running',
+    message: '服务运行正常',
     uptime: process.uptime(),
     loadavg: os.loadavg(), // 1, 5, 15分钟平均负载
     totalmem: os.totalmem(),
@@ -123,8 +127,11 @@ app.get('/api', (_req, res) => {
   })
 })
 
+app.use('/api', (_req, res) => res.status(404).json({ error: '请求的服务地址不存在，请刷新页面后重试' }))
 app.use(errorLogger)
+app.use(userFacingErrors)
 
 app.listen(port, () => {
   log(`Server is running on http://localhost:${port}`)
+  startCalendarRefresh()
 })

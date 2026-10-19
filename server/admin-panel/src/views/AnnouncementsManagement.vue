@@ -144,6 +144,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import apiClient from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -236,7 +237,7 @@ const fetchList = async () => {
     const res = await apiClient.get('/announcements')
     tableData.value = res.data || []
   } catch (error) {
-    ElMessage.error('获取公告失败')
+    ElMessage.error(getErrorMessage(error, "获取公告失败"))
   } finally {
     loading.value = false
   }
@@ -286,7 +287,7 @@ const handleSave = async () => {
     dialogVisible.value = false
     fetchList()
   } catch (error) {
-    ElMessage.error('保存失败')
+    ElMessage.error(getErrorMessage(error, "公告保存失败，请稍后重试"))
   }
 }
 
@@ -296,7 +297,7 @@ const toggleEnabled = async (row: Announcement, enabled: boolean) => {
     row.enabled = enabled
     ElMessage.success(enabled ? '公告已启用' : '公告已停用')
   } catch (error) {
-    ElMessage.error('状态更新失败')
+    ElMessage.error(getErrorMessage(error, "公告状态更新失败，请刷新后重试"))
   }
 }
 
@@ -311,7 +312,7 @@ const handleDelete = async (id: number) => {
     ElMessage.success('公告已删除')
     fetchList()
   } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
+    if (!isDialogDismissed(error)) ElMessage.error(getErrorMessage(error, "公告删除失败，请刷新列表后重试"))
   }
 }
 

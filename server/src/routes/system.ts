@@ -94,7 +94,7 @@ router.get('/info', (_req, res) => {
 router.post('/page-view', async (req, res) => {
   const pathValue = typeof req.body?.path === 'string' ? req.body.path.trim().slice(0, 255) : ''
   if (!pathValue || !pathValue.startsWith('/')) {
-    return res.status(400).json({ error: 'path is required' })
+    return res.status(400).json({ error: '缺少页面地址，请刷新页面后重试' })
   }
 
   const referrer = typeof req.body?.referrer === 'string' ? req.body.referrer.trim().slice(0, 512) : null
@@ -112,7 +112,7 @@ router.post('/page-view', async (req, res) => {
     res.status(204).send()
   } catch (error) {
     console.error('Error recording page view:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -242,7 +242,7 @@ router.get('/dashboard', protect, authorize('admin', 'editor', 'member'), async 
     })
   } catch (error) {
     console.error('Error loading dashboard data:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

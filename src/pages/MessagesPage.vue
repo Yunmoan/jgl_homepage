@@ -9,8 +9,9 @@
     </section>
 
     <div class="main-sections">
+      <div class="page-feedback"><ActionFeedback :message="successMessage" kind="success" @close="successMessage = ''" /><ActionFeedback :message="loadError" @close="loadError = ''" /><button v-if="loadError" type="button" class="cancel-button" @click="fetchMessages">重新加载留言</button></div>
       <TransitionGroup name="list" tag="div" class="messages-grid">
-        <div v-if="messages.length === 0 && isMounted" class="no-messages" key="no-messages">暂无留言</div>
+        <div v-if="messages.length === 0 && isMounted && !loadError" class="no-messages" key="no-messages">暂无留言，欢迎写下你的想法</div>
         <div v-for="(message, index) in reversedMessages" :key="message.id" class="message-card"
           :style="{ transitionDelay: `${index * 50}ms` }" :class="{ 'has-duplicates': message.duplicateCount > 1 }">
           <div class="message-header">
@@ -31,7 +32,7 @@
     <Transition name="modal">
       <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
         <div class="modal-content">
-          <button @click="closeModal" class="close-button">&times;</button>
+          <button @click="closeModal" class="close-button" aria-label="关闭留言窗口">&times;</button>
           <h2 class="sub-title">发表你的留言</h2>
           <form @submit.prevent="submitMessage">
             <div class="form-group">
@@ -52,6 +53,7 @@
             </div>
 
             <div class="modal-actions">
+              <ActionFeedback :message="submitError" @close="submitError = ''" />
               <button type="button" @click="closeModal" class="cancel-button">取消</button>
               <button type="submit" class="submit-button" :disabled="isSubmitting">
                 <span v-if="isSubmitting">提交中...</span>
@@ -68,6 +70,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useReCaptcha } from 'vue-recaptcha-v3'
+import ActionFeedback from '../components/ActionFeedback.vue'
+import { getErrorMessage, readApiResponse } from '../utils/feedback'
 
 interface Message {
   id: number;
@@ -89,6 +93,9 @@ const newQQid = ref(''); // Define newQQid
 const showModal = ref(false)
 const isMounted = ref(false)
 const isSubmitting = ref(false)
+const submitError = ref('')
+const successMessage = ref('')
+const loadError = ref('')
 
 const recaptcha = useReCaptcha()
 
@@ -97,12 +104,13 @@ const closeModal = () => {
 }
 
 const fetchMessages = async () => {
+  loadError.value = ''
   try {
     const response = await fetch('/api/messages');
-    if (!response.ok) throw new Error('Network response was not ok');
-    messages.value = await response.json();
+    messages.value = await readApiResponse<Message[]>(response, '留言加载失败，请重新加载');
   } catch (error) {
     console.error('Failed to fetch messages:', error);
+    loadError.value = getErrorMessage(error, '留言加载失败，请重新加载');
   }
 };
 
@@ -193,25 +201,25 @@ const reversedMessages = computed(() => {
 })
 
 const submitMessage = async () => {
-  if (!newAuthor.value.trim() || !newContent.value.trim() || isSubmitting.value) {
+  if (isSubmitting.value) return;
+  if (!newAuthor.value.trim() || !newContent.value.trim()) {
+    submitError.value = '请填写留言昵称和内容';
     return;
   }
 
   isSubmitting.value = true;
+  submitError.value = '';
+  successMessage.value = '';
 
   try {
     if (!recaptcha) {
-      alert('reCAPTCHA 未初始化，请稍后重试。');
-      isSubmitting.value = false;
-      return;
+      throw new Error('人机验证服务尚未就绪，请稍后重试');
     }
     await recaptcha.recaptchaLoaded();
     const token = await recaptcha.executeRecaptcha('submit_message');
 
     if (!token) {
-      alert('人机验证失败，请稍后重试。');
-      isSubmitting.value = false;
-      return;
+      throw new Error('人机验证未通过，请稍后重试');
     }
 
     const response = await fetch('/api/messages', {
@@ -227,43 +235,18 @@ const submitMessage = async () => {
       }),
     });
 
-    const contentType = response.headers.get('content-type') || ''
-    let data: any = null
-    try {
-      if (contentType.includes('application/json')) {
-        data = await response.json()
-      } else {
-        const text = await response.text()
-        try { data = JSON.parse(text) } catch { data = { raw: text } }
-      }
-    } catch (_) {
-      // ignore parse error
-    }
+    await readApiResponse(response, '留言提交失败，请稍后重试');
 
-    if (!response.ok) {
-      const codes: string[] = Array.isArray(data?.errorCodes) ? data.errorCodes : []
-      let msg = data?.error || data?.message || ''
-      if (!msg && codes.includes('invalid-input-response')) {
-        msg = 'reCAPTCHA 响应无效，请刷新页面后重试。'
-      }
-      const extras: string[] = []
-      if (codes.length) extras.push(`错误码：${codes.join(', ')}`)
-      if (typeof data?.score === 'number') extras.push(`评分：${data.score}`)
-      if (data?.action) extras.push(`action：${data.action}`)
-      const detail = extras.length ? `（${extras.join('；')}）` : ''
-      throw new Error(msg ? `${msg}${detail}` : `提交失败（HTTP ${response.status}）`)
-    }
-
-    alert('留言提交成功！感谢您的留言，审核通过后将会显示。');
+    successMessage.value = '留言已提交，审核通过后将公开显示';
 
     newAuthor.value = '';
     newContent.value = '';
     newQQid.value = '';
     closeModal();
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Submission error:', error);
-    alert(error?.message || '提交时发生错误，请检查网络连接或稍后重试。');
+    submitError.value = getErrorMessage(error, '留言提交失败，请稍后重试');
   } finally {
     isSubmitting.value = false;
   }
@@ -271,6 +254,9 @@ const submitMessage = async () => {
 </script>
 
 <style scoped>
+.page-feedback { max-width: 1200px; margin: 0 auto 18px; }
+.modal-actions { flex-wrap: wrap; }
+.modal-actions .action-feedback { flex-basis: 100%; }
 .hero {
   height: 50vh;
   display: flex;

@@ -37,3 +37,5 @@ coverage
 __screenshots__/
 
 /server/uploads/
+/server/data/exhibition-cache/*
+!/server/data/exhibition-cache/thonly.seed.json

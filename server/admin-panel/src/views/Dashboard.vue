@@ -141,6 +141,8 @@
 </template>
 
 <script setup lang="ts">
+import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/feedback'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/api'
@@ -173,6 +175,8 @@ const loadData = async () => {
   try {
     const { data: payload } = await apiClient.get<DashboardPayload>('/system/dashboard')
     Object.assign(data, payload)
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error, '工作台数据加载失败，请点击刷新重试'))
   } finally {
     loading.value = false
   }
@@ -189,7 +193,6 @@ const subtitle = computed(() =>
 )
 
 const formatNumber = (value: unknown) => Number(value || 0).toLocaleString('zh-CN')
-const totalUsers = computed(() => Number(data.users?.total_users ?? 0))
 const pendingUsers = computed(() => Number(data.users?.pending_users ?? 0))
 const pendingContent = computed(() => Number(data.news?.pending_news ?? 0) + Number(data.messages?.pending_messages ?? 0))
 const totalNews = computed(() => Number((isAdmin.value ? data.news : data.mine?.news)?.total_news ?? 0))

@@ -28,7 +28,7 @@ router.get('/public', async (_req, res) => {
     res.json(rows)
   } catch (e) {
     console.error('Error fetching public announcements:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -44,7 +44,7 @@ router.get('/', protect, authorize('admin', 'editor'), async (_req, res) => {
     res.json(rows)
   } catch (e) {
     console.error('Error listing announcements:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -61,9 +61,9 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
       end_at = null,
     } = req.body || {}
     const safeTitle = requiredString(title)
-    if (!safeTitle) return res.status(400).json({ error: 'title 必填' })
+    if (!safeTitle) return res.status(400).json({ error: '请填写公告标题' })
     if (!isOneOf(type, announcementTypes)) {
-      return res.status(400).json({ error: 'type 无效' })
+      return res.status(400).json({ error: '请选择有效的公告类型' })
     }
 
     const [result] = await pool.query(
@@ -81,10 +81,10 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
     )
 
     cache.del('announcements_public_active')
-    res.status(201).json({ message: 'created', id: (result as any).insertId })
+    res.status(201).json({ message: '公告已新增', id: (result as any).insertId })
   } catch (e) {
     console.error('Error creating announcement:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -99,7 +99,7 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
 
     if (title !== undefined) {
       const safeTitle = requiredString(title)
-      if (!safeTitle) return res.status(400).json({ error: 'title 必填' })
+      if (!safeTitle) return res.status(400).json({ error: '请填写公告标题' })
       fields.push('title = ?')
       values.push(safeTitle)
     }
@@ -109,7 +109,7 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
     }
     if (type !== undefined) {
       if (!isOneOf(type, announcementTypes)) {
-        return res.status(400).json({ error: 'type 无效' })
+        return res.status(400).json({ error: '请选择有效的公告类型' })
       }
       fields.push('type = ?')
       values.push(type)
@@ -131,18 +131,18 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
       values.push(cleanString(end_at))
     }
 
-    if (!fields.length) return res.status(400).json({ error: 'no fields to update' })
+    if (!fields.length) return res.status(400).json({ error: '没有可保存的修改，请检查填写内容' })
 
     const sql = `UPDATE site_announcements SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`
     values.push(id)
     const [result] = await pool.query(sql, values)
-    if ((result as any).affectedRows === 0) return res.status(404).json({ error: 'not found' })
+    if ((result as any).affectedRows === 0) return res.status(404).json({ error: '该公告不存在或已被删除，请刷新列表' })
 
     cache.del('announcements_public_active')
-    res.json({ message: 'updated' })
+    res.json({ message: '公告已保存' })
   } catch (e) {
     console.error('Error updating announcement:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -151,12 +151,12 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const { id } = req.params as { id: string }
     const [result] = await pool.query('DELETE FROM site_announcements WHERE id = ?', [id])
-    if ((result as any).affectedRows === 0) return res.status(404).json({ error: 'not found' })
+    if ((result as any).affectedRows === 0) return res.status(404).json({ error: '该公告不存在或已被删除，请刷新列表' })
     cache.del('announcements_public_active')
-    res.json({ message: 'deleted' })
+    res.json({ message: '公告已删除' })
   } catch (e) {
     console.error('Error deleting announcement:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

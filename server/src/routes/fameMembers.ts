@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.error('Error fetching fame members:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
   }
 });
 
@@ -24,7 +24,7 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
   const { name, description, image } = req.body;
 
   if (!name) {
-    return res.status(400).json({ error: 'Name is required' });
+    return res.status(400).json({ error: '请填写名称' });
   }
 
   try {
@@ -32,10 +32,10 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
       'INSERT INTO fame_members (name, description, image) VALUES (?, ?, ?)',
       [name, description, image]
     );
-    res.status(201).json({ message: 'Fame member created successfully', insertId: (result as any).insertId });
+    res.status(201).json({ message: '名人堂成员已新增', insertId: (result as any).insertId });
   } catch (error) {
     console.error('Error creating fame member:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
   }
 });
 
@@ -47,7 +47,7 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
   const { name, description, image } = req.body;
 
   if (!name) {
-    return res.status(400).json({ error: 'Name is required' });
+    return res.status(400).json({ error: '请填写名称' });
   }
 
   try {
@@ -57,13 +57,13 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
     );
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Fame member not found' });
+      return res.status(404).json({ error: '该名人堂成员不存在或已被删除，请刷新列表' });
     }
 
-    res.json({ message: 'Fame member updated successfully' });
+    res.json({ message: '名人堂成员已保存' });
   } catch (error) {
     console.error('Error updating fame member:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
   }
 });
 
@@ -77,13 +77,13 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
     const [result] = await pool.query('DELETE FROM fame_members WHERE id = ?', [id]);
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Fame member not found' });
+      return res.status(404).json({ error: '该名人堂成员不存在或已被删除，请刷新列表' });
     }
 
-    res.json({ message: 'Fame member deleted successfully' });
+    res.json({ message: '名人堂成员已删除' });
   } catch (error) {
     console.error('Error deleting fame member:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
   }
 });
 

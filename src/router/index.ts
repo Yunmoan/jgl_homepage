@@ -35,6 +35,11 @@ const router = createRouter({
       component: () => import('../pages/NewsPage.vue'),
     },
     {
+      path: '/exhibitions',
+      name: 'exhibitions',
+      component: () => import('../pages/ExhibitionsPage.vue'),
+    },
+    {
       path: '/club-apply',
       name: 'club-apply',
       component: ClubApplyView,

@@ -46,7 +46,7 @@ router.get('/', optionalAuth as any, async (req: any, res) => {
     }
   } catch (error) {
     console.error('Error fetching news:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -57,7 +57,7 @@ router.post('/', protect, authorize('admin', 'editor', 'member'), async (req: an
   const { title, date, author, image, summary, content, tags } = req.body
 
   if (!title || !content || !date) {
-    return res.status(400).json({ error: 'Title, content, and date are required' })
+    return res.status(400).json({ error: '请填写文章标题、发布时间和正文' })
   }
 
   const dateNormalized = toMysqlDatetime(date)
@@ -76,13 +76,13 @@ router.post('/', protect, authorize('admin', 'editor', 'member'), async (req: an
     )
     cache.del('news_public_approved')
     res.status(201).json({
-      message: 'News article created successfully',
+      message: status === 'approved' ? '文章已发布' : '文章已提交，请等待管理员审核',
       insertId: (result as any).insertId,
       status,
     })
   } catch (error) {
     console.error('Error creating news article:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -94,7 +94,7 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
   const { title, date, author, image, summary, content, tags } = req.body
 
   if (!title || !content || !date) {
-    return res.status(400).json({ error: 'Title, content, and date are required' })
+    return res.status(400).json({ error: '请填写文章标题、发布时间和正文' })
   }
 
   const dateNormalized = toMysqlDatetime(date)
@@ -117,14 +117,14 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
     const [result] = await pool.query(sql, params)
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'News article not found or no permission' })
+      return res.status(404).json({ error: '该文章不存在，或当前账号没有编辑权限' })
     }
 
     cache.del('news_public_approved')
-    res.json({ message: 'News article updated successfully' })
+    res.json({ message: '文章已保存' })
   } catch (error) {
     console.error('Error updating news article:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -138,14 +138,14 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
     const [result] = await pool.query('DELETE FROM news WHERE id = ?', [id])
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'News article not found' })
+      return res.status(404).json({ error: '该文章不存在或已被删除，请刷新列表' })
     }
 
     cache.del('news_public_approved')
-    res.json({ message: 'News article deleted successfully' })
+    res.json({ message: '文章已删除' })
   } catch (error) {
     console.error('Error deleting news article:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -156,19 +156,19 @@ router.put('/:id/status', protect, authorize('admin'), async (req, res) => {
   const { id } = req.params as { id: string }
   const { status } = req.body as { status?: 'approved' | 'rejected' | 'pending' }
   if (!isOneOf(status, ['approved', 'rejected', 'pending'] as const)) {
-    return res.status(400).json({ error: 'Invalid status' })
+    return res.status(400).json({ error: '请选择有效的状态' })
   }
   try {
     const [result] = await pool.query('UPDATE news SET status=? WHERE id = ?', [status, id])
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'News not found' })
+      return res.status(404).json({ error: '该文章不存在或已被删除，请刷新列表' })
     }
     // 清理公共缓存
     cache.del('news_public_approved')
-    res.json({ message: 'Status updated', status })
+    res.json({ message: '审核状态已更新', status })
   } catch (e) {
     console.error('Error updating news status:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

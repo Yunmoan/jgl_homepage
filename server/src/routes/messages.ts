@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
     res.json(rows)
   } catch (error) {
     console.error('Error fetching messages:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -33,7 +33,7 @@ router.get('/all', protect, authorize('admin', 'editor'), async (req, res) => {
     res.json(rows)
   } catch (error) {
     console.error('Error fetching all messages:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -47,7 +47,7 @@ router.post(
   upload.single('file'),
   async (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded.' })
+      return res.status(400).json({ error: '请先选择需要导入的文件' })
     }
 
     const connection = await pool.getConnection()
@@ -72,11 +72,11 @@ router.post(
       }
 
       await connection.commit()
-      res.json({ message: `${jsonData.length} messages imported successfully.` })
+      res.json({ message: `已导入 ${jsonData.length} 条留言` })
     } catch (error) {
       await connection.rollback()
       console.error('Error importing messages:', error)
-      res.status(500).json({ error: 'Failed to import messages. Please check the file format.' })
+      res.status(500).json({ error: '留言导入失败，请检查文件格式和内容后重试' })
     } finally {
       connection.release()
     }
@@ -93,7 +93,7 @@ router.post('/', async (req, res) => {
 
   // 1. Verify reCAPTCHA token
   if (!token) {
-    return res.status(400).json({ error: 'reCAPTCHA token is missing' })
+    return res.status(400).json({ error: '请完成人机验证后重试' })
   }
 
   try {
@@ -104,7 +104,7 @@ router.post('/', async (req, res) => {
 
     // 2. If verification is successful, proceed to save the message
     if (!safeAuthor || !safeContent) {
-      return res.status(400).json({ error: 'Author and content are required' })
+      return res.status(400).json({ error: '请填写留言昵称和内容' })
     }
 
     const [result] = await pool.query(
@@ -113,10 +113,10 @@ router.post('/', async (req, res) => {
     )
     res
       .status(201)
-      .json({ message: 'Message created successfully', insertId: (result as any).insertId })
+      .json({ message: '留言已提交，审核通过后将公开显示', insertId: (result as any).insertId })
   } catch (error) {
     console.error('Error during message creation or reCAPTCHA verification:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -129,7 +129,7 @@ router.post('/add', protect, authorize('admin', 'editor'), async (req, res) => {
   const safeContent = requiredString(content)
 
   if (!safeAuthor || !safeContent) {
-    return res.status(400).json({ error: 'Author and content are required' })
+    return res.status(400).json({ error: '请填写留言昵称和内容' })
   }
   try {
     const [result] = await pool.query(
@@ -137,12 +137,12 @@ router.post('/add', protect, authorize('admin', 'editor'), async (req, res) => {
       [safeAuthor, safeContent, cleanString(qq), 'approved'],
     )
     res.status(201).json({
-      message: 'Message created successfully by admin',
+      message: '留言已新增',
       insertId: (result as any).insertId,
     })
   } catch (error) {
     console.error('Error creating message by admin:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -156,7 +156,7 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
   const safeContent = requiredString(content)
 
   if (!safeAuthor || !safeContent) {
-    return res.status(400).json({ error: 'Author and content are required' })
+    return res.status(400).json({ error: '请填写留言昵称和内容' })
   }
   try {
     const [result] = await pool.query(
@@ -164,12 +164,12 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
       [safeAuthor, safeContent, cleanString(qq), id],
     )
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Message not found' })
+      return res.status(404).json({ error: '该留言不存在或已被删除，请刷新列表' })
     }
-    res.json({ message: 'Message updated successfully' })
+    res.json({ message: '留言已保存' })
   } catch (error) {
     console.error('Error updating message:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -180,17 +180,17 @@ router.put('/:id/status', protect, authorize('admin', 'editor'), async (req, res
   const { id } = req.params
   const { status } = req.body
   if (!isOneOf(status, messageStatuses)) {
-    return res.status(400).json({ error: 'Valid status is required' })
+    return res.status(400).json({ error: '请选择有效的状态' })
   }
   try {
     const [result] = await pool.query('UPDATE messages SET status = ? WHERE id = ?', [status, id])
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Message not found' })
+      return res.status(404).json({ error: '该留言不存在或已被删除，请刷新列表' })
     }
-    res.json({ message: 'Message status updated successfully' })
+    res.json({ message: '留言状态已更新' })
   } catch (error) {
     console.error('Error updating message status:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -202,12 +202,12 @@ router.delete('/:id', protect, authorize('admin', 'editor'), async (req, res) =>
   try {
     const [result] = await pool.query('DELETE FROM messages WHERE id = ?', [id])
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Message not found' })
+      return res.status(404).json({ error: '该留言不存在或已被删除，请刷新列表' })
     }
-    res.json({ message: 'Message deleted successfully' })
+    res.json({ message: '留言已删除' })
   } catch (error) {
     console.error('Error deleting message:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

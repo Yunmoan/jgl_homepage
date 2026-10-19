@@ -28,6 +28,9 @@
       <section id="news">
         <NewsSection @select-article="onArticleSelected" />
       </section>
+      <section id="exhibitions">
+        <ExhibitionSection preview />
+      </section>
       <section id="history" class="fade-in-section">
         <PictureView />
       </section>
@@ -46,7 +49,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
+import ExhibitionSection from '../components/ExhibitionSection.vue';
 import AboutView from '../views/AboutView.vue';
 import WorksView from '../views/WorksView.vue';
 import ContactView from '../views/ContactView.vue';
@@ -61,15 +65,16 @@ const onArticleSelected = (article: any) => {
   emit('select-article', article);
 };
 
+let observer: IntersectionObserver | undefined;
 onMounted(() => {
   const sections = document.querySelectorAll('.fade-in-section');
 
-  const observer = new IntersectionObserver(
+  observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           (entry.target as HTMLElement).classList.add('is-visible');
-          observer.unobserve(entry.target); // Animate only once
+          observer?.unobserve(entry.target); // Animate only once
         }
       });
     },
@@ -79,9 +84,10 @@ onMounted(() => {
   );
 
   sections.forEach((section) => {
-    observer.observe(section);
+    observer?.observe(section);
   });
 });
+onUnmounted(() => observer?.disconnect());
 </script>
 
 <style scoped>

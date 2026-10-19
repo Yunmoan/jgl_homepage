@@ -131,6 +131,7 @@
                                             :headers="uploadHeaders"
                                             :show-file-list="false"
                                             :on-success="(res: any) => onMemberImageSuccess(index, res)"
+                                            :on-error="showUploadError"
                                             :before-upload="beforeImageUpload"
                                         >
                                             <el-button :icon="Upload">上传</el-button>
@@ -179,6 +180,8 @@
 </template>
 
 <script setup lang="ts">
+import { showUploadError } from '@/feedback'
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { ref, onMounted, reactive, computed, watch } from 'vue'
 import apiClient from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -246,7 +249,7 @@ const fetchData = async () => {
         const response = await apiClient.get('/admin-history')
         tableData.value = response.data
     } catch (error) {
-        ElMessage.error('获取理事会列表失败')
+        ElMessage.error(getErrorMessage(error, "获取理事会列表失败"))
     } finally {
         loading.value = false
     }
@@ -344,31 +347,31 @@ const handleSave = async () => {
     try {
         if (isEditMode.value) {
             await apiClient.put(`/admin-history/${form.id}` as string, form)
-            ElMessage.success('更新成功')
+            ElMessage.success('理事会记录已保存')
         } else {
             await apiClient.post('/admin-history', form)
-            ElMessage.success('创建成功')
+            ElMessage.success('理事会记录已新增')
         }
         dialogVisible.value = false
         fetchData()
     } catch (error) {
-        ElMessage.error('保存失败')
+        ElMessage.error(getErrorMessage(error, "理事会记录保存失败，请稍后重试"))
     }
 }
 
 const handleDelete = async (id: number) => {
     try {
-        await ElMessageBox.confirm('确定要删除这个理事会及其所有成员吗？', '警告', {
-            confirmButtonText: '确定',
+        await ElMessageBox.confirm('确认删除该届理事会及其所有成员记录吗？删除后无法恢复。', '删除理事会', {
+            confirmButtonText: '删除',
             cancelButtonText: '取消',
             type: 'warning',
         })
         await apiClient.delete(`/admin-history/${id}`)
-        ElMessage.success('删除成功')
+        ElMessage.success('理事会记录已删除')
         fetchData()
     } catch (error: any) {
-        if (error !== 'cancel') {
-            ElMessage.error('删除失败')
+        if (!isDialogDismissed(error)) {
+            ElMessage.error(getErrorMessage(error, "理事会记录删除失败，请刷新列表后重试"))
         }
     }
 }

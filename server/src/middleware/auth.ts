@@ -37,18 +37,22 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
   const token = req.header('Authorization')?.replace('Bearer ', '')
 
   if (!token) {
-    return res.status(401).json({ error: 'No token, authorization denied' })
+    return res.status(401).json({ error: '请先登录后再进行此操作' })
   }
 
   try {
     const user = await currentUserFromToken(token)
     if (!user) {
-      return res.status(401).json({ error: 'Token user is not valid' })
+      return res.status(401).json({ error: '登录状态已失效，请重新登录' })
     }
     req.user = user
     next()
   } catch (error) {
-    res.status(401).json({ error: 'Token is not valid' })
+    if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError || error instanceof jwt.NotBeforeError) {
+      return res.status(401).json({ error: '登录已过期，请重新登录' })
+    }
+    console.error('Failed to verify current account:', error)
+    res.status(503).json({ error: '暂时无法验证登录状态，请稍后重试' })
   }
 }
 
@@ -68,7 +72,7 @@ export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextF
 export const authorize = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden' })
+      return res.status(403).json({ error: '当前账号没有此操作权限，如有需要请联系管理员' })
     }
     next()
   }

@@ -10,7 +10,7 @@ interface RecaptchaResult {
 
 export const verifyRecaptcha = async (token: string | undefined, expectedAction: string) => {
   if (!token) {
-    return { ok: false, status: 400, body: { error: 'reCAPTCHA token is missing' } }
+    return { ok: false, status: 400, body: { error: '请完成人机验证后重试' } }
   }
 
   const secret = config.recaptcha.secretKey
@@ -19,7 +19,7 @@ export const verifyRecaptcha = async (token: string | undefined, expectedAction:
     return {
       ok: false,
       status: 500,
-      body: { error: '服务端未配置 reCAPTCHA Secret（RECAPTCHA_SECRET_KEY）' },
+      body: { error: '人机验证服务暂时不可用，请稍后重试或联系管理员' },
     }
   }
 
@@ -27,32 +27,41 @@ export const verifyRecaptcha = async (token: string | undefined, expectedAction:
   params.append('secret', secret)
   params.append('response', token)
 
-  const { data } = await axios.post<RecaptchaResult>(
-    'https://recaptcha.net/recaptcha/api/siteverify',
-    params,
-    {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+  let data: RecaptchaResult
+  try {
+    const response = await axios.post<RecaptchaResult>(
+      'https://recaptcha.net/recaptcha/api/siteverify',
+      params,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        timeout: 5000,
       },
-      timeout: 5000,
-    },
-  )
+    )
+    data = response.data
+  } catch (error) {
+    console.error('reCAPTCHA service request failed:', error)
+    return { ok: false, status: 503, body: { error: '人机验证服务暂时不可用，请稍后重试' } }
+  }
 
   const errorCodes = data['error-codes']
 
   if (!data.success) {
-    return { ok: false, status: 400, body: { error: 'reCAPTCHA 验证失败', errorCodes } }
+    console.warn('reCAPTCHA rejected:', errorCodes)
+    return { ok: false, status: 400, body: { error: '人机验证未通过，请刷新页面后重试' } }
   }
 
   if (typeof data.score === 'number' && data.score < 0.5) {
-    return { ok: false, status: 400, body: { error: 'reCAPTCHA 评分过低', score: data.score } }
+    console.warn('reCAPTCHA score rejected:', data.score)
+    return { ok: false, status: 400, body: { error: '人机验证未通过，请稍后重试' } }
   }
 
   if (data.action && data.action !== expectedAction) {
     return {
       ok: false,
       status: 400,
-      body: { error: 'reCAPTCHA action 不匹配', action: data.action },
+      body: { error: '人机验证已失效，请刷新页面后重试' },
     }
   }
 

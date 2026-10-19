@@ -87,11 +87,11 @@ router.get('/me', protect, async (req: any, res) => {
       [userId],
     )
     const me = Array.isArray(rows) ? rows[0] : undefined
-    if (!me) return res.status(404).json({ error: 'User not found' })
+    if (!me) return res.status(404).json({ error: '该账号不存在或已被删除，请刷新列表' })
     res.json(me)
   } catch (e) {
     console.error('Error fetching me:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -102,16 +102,16 @@ router.put('/me/profile', protect, async (req: any, res) => {
   const { updates, params } = buildProfileUpdates(req.body)
 
   if (!updates.length) {
-    return res.status(400).json({ error: 'No fields to update' })
+    return res.status(400).json({ error: '没有可保存的修改，请检查填写内容' })
   }
 
   try {
     params.push(req.user.id)
     await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params)
-    res.json({ message: 'Profile updated' })
+    res.json({ message: '个人资料已保存' })
   } catch (e) {
     console.error('Error updating my profile:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -125,10 +125,10 @@ router.put('/me/application', protect, async (req: any, res) => {
   const safeClubLogo = cleanString(req.body?.clubLogo)
 
   if (!updates.length) {
-    return res.status(400).json({ error: 'No fields to update' })
+    return res.status(400).json({ error: '没有可保存的修改，请检查填写内容' })
   }
   if (!safeClubName || !safeContactName || !safeClubLogo) {
-    return res.status(400).json({ error: 'clubName, contactName, and clubLogo are required' })
+    return res.status(400).json({ error: '请填写社团名称和联系人，并上传社团 Logo' })
   }
 
   try {
@@ -143,12 +143,12 @@ router.put('/me/application', protect, async (req: any, res) => {
       params,
     )
     if ((result as any).affectedRows === 0) {
-      return res.status(403).json({ error: 'Only pending, rejected, or withdrawn applications can be updated' })
+      return res.status(403).json({ error: '当前申请状态不支持修改资料，请刷新页面确认审核结果' })
     }
-    res.json({ message: 'Application updated' })
+    res.json({ message: '申请资料已保存，请等待管理员审核' })
   } catch (e) {
     console.error('Error updating my application:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -166,12 +166,12 @@ router.put('/me/application/withdraw', protect, async (req: any, res) => {
       [req.user.id],
     )
     if ((result as any).affectedRows === 0) {
-      return res.status(403).json({ error: 'Only pending applications can be withdrawn' })
+      return res.status(403).json({ error: '只有待审核的申请可以撤回，请刷新页面确认当前状态' })
     }
-    res.json({ message: 'Application withdrawn' })
+    res.json({ message: '申请已撤回，修改资料后可重新提交' })
   } catch (e) {
     console.error('Error withdrawing my application:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -185,7 +185,7 @@ router.put('/:id/profile', protect, authorize('admin'), async (req, res) => {
   }
 
   if (username !== undefined && !cleanString(username)) {
-    return res.status(400).json({ error: 'username cannot be empty' })
+    return res.status(400).json({ error: '账号不能为空，请输入账号' })
   }
   const safeUsername = cleanString(username)
   if (safeUsername && !isValidUsername(safeUsername)) {
@@ -199,7 +199,7 @@ router.put('/:id/profile', protect, authorize('admin'), async (req, res) => {
         id,
       ])
       if (Array.isArray(dupRows) && dupRows.length > 0) {
-        return res.status(409).json({ error: 'Username already exists' })
+        return res.status(409).json({ error: '该账号已被使用，请更换账号' })
       }
     }
 
@@ -215,23 +215,23 @@ router.put('/:id/profile', protect, authorize('admin'), async (req, res) => {
     params.push(...profileUpdates.params)
 
     if (updates.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' })
+      return res.status(400).json({ error: '没有可保存的修改，请检查填写内容' })
     }
 
     params.push(id)
     const [result] = await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params)
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'User not found' })
+      return res.status(404).json({ error: '该账号不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'User profile updated' })
+    res.json({ message: '账号资料已保存' })
   } catch (e: any) {
     console.error('Error updating user profile:', e)
     if (e && e.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ error: 'Username already exists' })
+      return res.status(409).json({ error: '该账号已被使用，请更换账号' })
     }
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -257,7 +257,7 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
     res.json(rows)
   } catch (error) {
     console.error('Error fetching users:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -296,25 +296,25 @@ router.post('/', protect, authorize('admin'), async (req: any, res) => {
   const safeUsername = cleanString(username)
 
   if (!safeUsername || !password || !role) {
-    return res.status(400).json({ error: 'Username, password, and role are required' })
+    return res.status(400).json({ error: '请填写账号、初始密码并选择角色' })
   }
   if (!isValidUsername(safeUsername)) {
     return res.status(400).json({ error: usernameRuleText })
   }
   if (password.length < 8) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters' })
+    return res.status(400).json({ error: '密码至少需要 8 位' })
   }
   if (!isOneOf(role, roles)) {
-    return res.status(400).json({ error: 'Valid role is required' })
+    return res.status(400).json({ error: '请选择有效的账号角色' })
   }
   if (!isOneOf(status, statuses)) {
-    return res.status(400).json({ error: 'Valid status is required' })
+    return res.status(400).json({ error: '请选择有效的状态' })
   }
 
   try {
     const [existing] = await pool.query('SELECT id FROM users WHERE username = ?', [safeUsername])
     if (Array.isArray(existing) && existing.length > 0) {
-      return res.status(409).json({ error: 'Username already exists' })
+      return res.status(409).json({ error: '该账号已被使用，请更换账号' })
     }
 
     const salt = await bcrypt.genSalt(10)
@@ -353,13 +353,13 @@ router.post('/', protect, authorize('admin'), async (req: any, res) => {
         req.user?.id ?? null,
       ],
     )
-    res.status(201).json({ message: 'User created successfully', insertId: (result as any).insertId })
+    res.status(201).json({ message: '账号已新增', insertId: (result as any).insertId })
   } catch (error: any) {
     console.error('Error creating user:', error)
     if (error && error.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ error: 'Username already exists' })
+      return res.status(409).json({ error: '该账号已被使用，请更换账号' })
     }
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -371,10 +371,10 @@ router.put('/:id/review', protect, authorize('admin'), async (req: any, res) => 
   const { status, reviewNote, role } = req.body as { status?: string; reviewNote?: string; role?: string }
 
   if (!isOneOf(status, reviewStatuses)) {
-    return res.status(400).json({ error: 'Review status must be approved, rejected, disabled, or withdrawn' })
+    return res.status(400).json({ error: '请选择通过、驳回、停用或撤回状态' })
   }
   if (status === 'approved' && role !== undefined && !isOneOf(role, approvalRoles)) {
-    return res.status(400).json({ error: 'Approved role must be member, editor, or admin' })
+    return res.status(400).json({ error: '请为审核通过的账号选择成员、编辑员或管理员角色' })
   }
 
   const connection = await pool.getConnection()
@@ -395,7 +395,7 @@ router.put('/:id/review', protect, authorize('admin'), async (req: any, res) => 
 
     if ((result as any).affectedRows === 0) {
       await connection.rollback()
-      return res.status(404).json({ error: 'User not found' })
+      return res.status(404).json({ error: '该账号不存在或已被删除，请刷新列表' })
     }
 
     if (status === 'approved') {
@@ -403,11 +403,11 @@ router.put('/:id/review', protect, authorize('admin'), async (req: any, res) => 
     }
 
     await connection.commit()
-    res.json({ message: 'Review updated successfully' })
+    res.json({ message: '账号审核结果已保存' })
   } catch (error) {
     await connection.rollback()
     console.error('Error updating user review:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   } finally {
     connection.release()
   }
@@ -421,20 +421,20 @@ router.put('/:id/role', protect, authorize('admin'), async (req, res) => {
   const { role } = req.body as { role?: string }
 
   if (!isOneOf(role, roles)) {
-    return res.status(400).json({ error: 'Valid role is required' })
+    return res.status(400).json({ error: '请选择有效的账号角色' })
   }
 
   try {
     const [result] = await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, id])
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'User not found' })
+      return res.status(404).json({ error: '该账号不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'User role updated successfully' })
+    res.json({ message: '账号角色已更新' })
   } catch (error) {
     console.error('Error updating user role:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -445,28 +445,28 @@ router.put('/me/password', protect, async (req: any, res) => {
   const { oldPassword, newPassword } = req.body as { oldPassword?: string; newPassword?: string }
 
   if (!oldPassword || !newPassword) {
-    return res.status(400).json({ error: 'oldPassword and newPassword are required' })
+    return res.status(400).json({ error: '请输入原密码和新密码' })
   }
   if (newPassword.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' })
+    return res.status(400).json({ error: '新密码至少需要 6 位' })
   }
 
   try {
     const userId = req.user.id
     const [rows] = await pool.query<any[]>('SELECT id, password FROM users WHERE id = ?', [userId])
     const user = Array.isArray(rows) ? rows[0] : undefined
-    if (!user) return res.status(404).json({ error: 'User not found' })
+    if (!user) return res.status(404).json({ error: '该账号不存在或已被删除，请刷新列表' })
 
     const isMatch = await bcrypt.compare(oldPassword, user.password)
-    if (!isMatch) return res.status(401).json({ error: 'Old password is incorrect' })
+    if (!isMatch) return res.status(400).json({ error: '原密码不正确，请检查后重试' })
 
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(newPassword, salt)
     await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId])
-    res.json({ message: 'Password updated successfully' })
+    res.json({ message: '密码已修改，下次登录请使用新密码' })
   } catch (error) {
     console.error('Error updating password:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -478,25 +478,25 @@ router.put('/:id/password', protect, authorize('admin'), async (req, res) => {
   const { newPassword } = req.body as { newPassword?: string }
 
   if (!newPassword) {
-    return res.status(400).json({ error: 'newPassword is required' })
+    return res.status(400).json({ error: '请输入新密码' })
   }
   if (newPassword.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' })
+    return res.status(400).json({ error: '新密码至少需要 6 位' })
   }
 
   try {
     const [exists] = await pool.query('SELECT id FROM users WHERE id = ?', [id])
     if (Array.isArray(exists) && exists.length === 0) {
-      return res.status(404).json({ error: 'User not found' })
+      return res.status(404).json({ error: '该账号不存在或已被删除，请刷新列表' })
     }
 
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(newPassword, salt)
     await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, id])
-    res.json({ message: 'Password reset successfully' })
+    res.json({ message: '密码已重置，请通知账号使用者使用新密码登录' })
   } catch (error) {
     console.error('Error resetting password:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -508,19 +508,19 @@ router.delete('/:id', protect, authorize('admin'), async (req: any, res) => {
 
   try {
     if (Number(id) === req.user.id) {
-      return res.status(400).json({ error: 'You cannot delete your own account' })
+      return res.status(400).json({ error: '无法删除当前登录的账号' })
     }
 
     const [result] = await pool.query('DELETE FROM users WHERE id = ?', [id])
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'User not found' })
+      return res.status(404).json({ error: '该账号不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'User deleted successfully' })
+    res.json({ message: '账号已删除' })
   } catch (error) {
     console.error('Error deleting user:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -534,17 +534,17 @@ router.get('/import/template', protect, authorize('admin'), (_req, res) => {
 
 // POST bulk import
 router.post('/import', protect, authorize('admin'), csvUpload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'CSV file is required' })
+  if (!req.file) return res.status(400).json({ error: '请先选择 CSV 文件' })
   try {
     const content = req.file.buffer.toString('utf-8').trim()
-    if (!content) return res.status(400).json({ error: 'CSV is empty' })
+    if (!content) return res.status(400).json({ error: 'CSV 文件中没有内容，请检查后重新上传' })
 
     const lines = content.split(/\r?\n/)
     const header = lines.shift()?.split(',') ?? []
     const requiredHeader = ['username', 'password', 'role', 'nickname']
     const headerLower = header.map((h) => h.trim().toLowerCase())
     if (requiredHeader.some((h) => !headerLower.includes(h))) {
-      return res.status(400).json({ error: 'Invalid header in CSV' })
+      return res.status(400).json({ error: 'CSV 表头不正确，请下载模板并按模板填写' })
     }
 
     const idx = (name: string) => headerLower.indexOf(name)
@@ -567,9 +567,9 @@ router.post('/import', protect, authorize('admin'), csvUpload.single('file'), as
 
       if (!username || !password) {
         results.push({
-          username: username || '(empty)',
+          username: username || '（未填写）',
           status: 'skipped',
-          reason: 'Missing username/password',
+          reason: '缺少账号或密码',
         })
         continue
       }
@@ -578,22 +578,22 @@ router.post('/import', protect, authorize('admin'), csvUpload.single('file'), as
         continue
       }
       if (password.length < 8) {
-        results.push({ username, status: 'skipped', reason: 'Password must be at least 8 characters' })
+        results.push({ username, status: 'skipped', reason: '密码至少需要 8 位' })
         continue
       }
       if (!isOneOf(role, roles)) {
-        results.push({ username, status: 'skipped', reason: 'Invalid role' })
+        results.push({ username, status: 'skipped', reason: '账号角色无效' })
         continue
       }
       if (!isOneOf(status, statuses)) {
-        results.push({ username, status: 'skipped', reason: 'Invalid status' })
+        results.push({ username, status: 'skipped', reason: '请选择有效的状态' })
         continue
       }
 
       try {
         const [exist] = await pool.query('SELECT id FROM users WHERE username = ?', [username])
         if (Array.isArray(exist) && exist.length > 0) {
-          results.push({ username, status: 'skipped', reason: 'Duplicate username' })
+          results.push({ username, status: 'skipped', reason: '账号已存在，本条记录已跳过' })
           continue
         }
         const salt = await bcrypt.genSalt(10)
@@ -627,7 +627,7 @@ router.post('/import', protect, authorize('admin'), csvUpload.single('file'), as
         results.push({ username, status: 'imported' })
       } catch (err: any) {
         console.error('Import error for', username, err)
-        results.push({ username, status: 'skipped', reason: err.message || 'Error' })
+        results.push({ username, status: 'skipped', reason: '本条账号导入失败，请检查资料后重试' })
       }
     }
 
@@ -637,7 +637,7 @@ router.post('/import', protect, authorize('admin'), csvUpload.single('file'), as
     res.json({ imported, skipped, details: results })
   } catch (e) {
     console.error('CSV import error:', e)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

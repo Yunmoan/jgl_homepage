@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     res.json(rows)
   } catch (error) {
     console.error('Error fetching history:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -24,7 +24,7 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
   const { title, date, description, image, link, dialog_data } = req.body
 
   if (!title) {
-    return res.status(400).json({ error: 'Title is required' })
+    return res.status(400).json({ error: '请填写标题' })
   }
 
   try {
@@ -34,10 +34,10 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
     )
     res
       .status(201)
-      .json({ message: 'History event created successfully', insertId: (result as any).insertId })
+      .json({ message: '历史事件已新增', insertId: (result as any).insertId })
   } catch (error) {
     console.error('Error creating history event:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -49,7 +49,7 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
   const { title, date, description, image, link, dialog_data } = req.body
 
   if (!title) {
-    return res.status(400).json({ error: 'Title is required' })
+    return res.status(400).json({ error: '请填写标题' })
   }
 
   try {
@@ -59,13 +59,13 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
     )
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'History event not found' })
+      return res.status(404).json({ error: '该历史事件不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'History event updated successfully' })
+    res.json({ message: '历史事件已保存' })
   } catch (error) {
     console.error('Error updating history event:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -79,13 +79,13 @@ router.delete('/:id', protect, authorize('admin', 'editor'), async (req, res) =>
     const [result] = await pool.query('DELETE FROM history WHERE id = ?', [id])
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'History event not found' })
+      return res.status(404).json({ error: '该历史事件不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'History event deleted successfully' })
+    res.json({ message: '历史事件已删除' })
   } catch (error) {
     console.error('Error deleting history event:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

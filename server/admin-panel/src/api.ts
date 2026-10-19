@@ -2,6 +2,7 @@ import axios from 'axios'
 
 const apiClient = axios.create({
   baseURL: '/api', // Using Vite proxy
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,12 +28,13 @@ apiClient.interceptors.response.use(
     return response
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
+    const isLoginRequest = error.config?.url === '/auth/login'
+    if (error.response?.status === 401 && !isLoginRequest) {
       // Token expired or invalid
       localStorage.removeItem('token') // Clear the expired token
       // Redirect to login page
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+        window.location.href = '/login?reason=session-expired'
       }
     }
     return Promise.reject(error)

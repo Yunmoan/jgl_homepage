@@ -92,6 +92,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
@@ -135,7 +136,7 @@ const loadMe = async () => {
     const { data } = await apiClient.get('/users/me')
     me.value = data
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '获取申请信息失败')
+    ElMessage.error(getErrorMessage(error, "获取申请信息失败"))
   } finally {
     loading.value = false
   }
@@ -167,7 +168,7 @@ const saveApplication = async () => {
     editorVisible.value = false
     await loadMe()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '保存失败')
+    ElMessage.error(getErrorMessage(error, "申请资料保存失败，请稍后重试"))
   }
 }
 
@@ -182,8 +183,8 @@ const withdraw = async () => {
     ElMessage.success('申请已撤回')
     await loadMe()
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.response?.data?.error || '撤回失败')
+    if (!isDialogDismissed(error)) {
+      ElMessage.error(getErrorMessage(error, "撤回失败"))
     }
   }
 }

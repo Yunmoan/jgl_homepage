@@ -22,7 +22,7 @@
         </router-link>
       </nav>
 
-      <button class="menu-toggle" @click="toggleMenu" aria-label="Toggle menu" :class="{ 'is-open': isMenuOpen }"
+      <button class="menu-toggle" @click="toggleMenu" aria-label="打开导航菜单" :class="{ 'is-open': isMenuOpen }"
         aria-controls="mobile-nav-container" :aria-expanded="isMenuOpen">
         <span class="bar"></span>
         <span class="bar"></span>
@@ -72,6 +72,7 @@ const navItems = ref([
   { to: '/home#about', text: '关于', en: 'ABOUT' },
   { to: '/home#works', text: '制品', en: 'WORKS' },
   { to: '/news', text: '新闻', en: 'NEWS' },
+  { to: '/exhibitions', text: '展会日历', en: 'CALENDAR' },
   { to: '/home#history', text: '高联足迹', en: 'HISTORY' },
   { to: '/home#members', text: '成员社团', en: 'MEMBERS' },
   { to: '/fames', text: '名人堂', en: 'FAMES' },
@@ -112,7 +113,8 @@ const setupObserver = () => {
       if (!isObserverActive.value) return
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          activeSection.value = `/home#${(entry.target as HTMLElement).id}`
+          const id = (entry.target as HTMLElement).id
+          activeSection.value = id === 'exhibitions' ? '/exhibitions' : `/home#${id}`
         }
       })
     },
@@ -417,7 +419,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.06);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .main-nav {
     display: none;
   }

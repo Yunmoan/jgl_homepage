@@ -1,3 +1,44 @@
+CREATE TABLE IF NOT EXISTS exhibition_source_settings (
+  id TINYINT UNSIGNED PRIMARY KEY,
+  config_json TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS exhibition_bindings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  source_key VARCHAR(80) NOT NULL,
+  source_event_id VARCHAR(80) NOT NULL,
+  event_snapshot TEXT NOT NULL,
+  participation ENUM('undecided','participating','not_participating') NOT NULL DEFAULT 'undecided',
+  booth VARCHAR(100) NOT NULL DEFAULT '',
+  participation_notes TEXT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_exhibition_binding (source_key, source_event_id)
+);
+
+CREATE TABLE IF NOT EXISTS exhibition_settings (
+  id TINYINT UNSIGNED PRIMARY KEY,
+  homepage_mode ENUM('current_month', 'fixed_month', 'year') NOT NULL DEFAULT 'current_month',
+  homepage_month CHAR(7) NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS exhibitions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(120) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  location VARCHAR(255) NOT NULL DEFAULT '',
+  booth VARCHAR(100) NOT NULL DEFAULT '',
+  participation ENUM('undecided','participating','not_participating') NOT NULL DEFAULT 'undecided',
+  participation_notes TEXT NULL,
+  description TEXT,
+  link VARCHAR(500) NOT NULL DEFAULT '',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_exhibitions_dates (start_date, end_date)
+);
+
 CREATE TABLE IF NOT EXISTS news (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL,

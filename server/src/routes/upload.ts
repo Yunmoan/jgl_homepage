@@ -74,16 +74,17 @@ const handleMulterError = (
     if (err) {
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({ message: 'File too large. Maximum size is 2MB.' })
+          return res.status(400).json({ message: '图片大小不能超过 2 MB，请压缩后重新上传' })
         }
-        return res.status(400).json({ message: `Upload error: ${err.message}` })
+        return res.status(400).json({ message: '图片上传未完成，请重新选择一张图片后重试' })
       }
       if (err.message === 'Unsupported file type') {
         return res
           .status(400)
-          .json({ message: 'Unsupported file type. Allowed: PNG, JPG, JPEG, WEBP, SVG.' })
+          .json({ message: '图片格式不支持，请选择 PNG、JPG、JPEG、WebP 或 SVG 文件' })
       }
-      return res.status(400).json({ message: err.message })
+      console.error('Image upload failed:', err)
+      return res.status(500).json({ message: '图片上传失败，请稍后重试' })
     }
     next()
   })
@@ -93,10 +94,10 @@ const requireUploadType = (allowedTypes: readonly string[], defaultType: string)
   return (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const type = (req.query.type as string) || defaultType
     if (!ALLOWED_TYPES.includes(type as any)) {
-      return res.status(400).json({ message: 'Invalid upload type.' })
+      return res.status(400).json({ message: '上传类别无效，请刷新页面后重试' })
     }
     if (!allowedTypes.includes(type)) {
-      return res.status(403).json({ message: 'Forbidden upload type.' })
+      return res.status(403).json({ message: '当前账号没有上传此类文件的权限' })
     }
     next()
   }
@@ -105,11 +106,11 @@ const requireUploadType = (allowedTypes: readonly string[], defaultType: string)
 router.post('/public', requireUploadType(PUBLIC_UPLOAD_TYPES, 'application_logos'), handleMulterError, (req: any, res) => {
   const type = (req.query.type as string) || 'application_logos'
   if (!req.file) {
-    return res.status(400).json({ message: 'Please upload a file' })
+    return res.status(400).json({ message: '请先选择需要上传的图片' })
   }
 
   res.json({
-    message: 'File uploaded successfully',
+    message: '图片已上传',
     filePath: `/uploads/${type}/${req.file.filename}`,
   })
 })
@@ -122,19 +123,19 @@ router.post(
   (req: any, res, next) => {
     const type = (req.query.type as string) || 'general'
     if (!ALLOWED_TYPES.includes(type as any)) {
-      return res.status(400).json({ message: 'Invalid upload type.' })
+      return res.status(400).json({ message: '上传类别无效，请刷新页面后重试' })
     }
     if (req.user?.role === 'member' && !['works', 'news'].includes(type)) {
       return res
         .status(403)
-        .json({ message: 'Forbidden: members can only upload for works or news' })
+        .json({ message: '成员账号仅可上传新闻或作品的图片' })
     }
     next()
   },
   handleMulterError,
   (req: any, res) => {
     if (!req.file) {
-      return res.status(400).json({ message: 'Please upload a file' })
+      return res.status(400).json({ message: '请先选择需要上传的图片' })
     }
     const type = (req.query.type as string) || 'general'
 
@@ -142,7 +143,7 @@ router.post(
     console.log(`[DEBUG] Upload: file written to=${req.file.path}, serving from=/uploads/${type}/, staticRoot=${require('path').join(__dirname,'../uploads')}`)
 
     res.json({
-      message: 'File uploaded successfully',
+      message: '图片已上传',
       filePath: filePath,
     })
   },

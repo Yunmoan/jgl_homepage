@@ -64,6 +64,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage } from '@/feedback'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
@@ -91,8 +92,8 @@ const loadInfo = async () => {
   try {
     const { data } = await apiClient.get<SystemInfo>('/system/info')
     info.value = data
-  } catch {
-    ElMessage.error('无法获取系统信息')
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error, "无法获取系统信息"))
   } finally {
     loading.value = false
   }

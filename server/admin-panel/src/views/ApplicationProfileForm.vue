@@ -112,6 +112,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage } from '@/feedback'
 import { onBeforeUnmount, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import apiClient from '@/api'
@@ -196,7 +197,7 @@ const buildLogoBlob = async () => {
   canvas.width = size
   canvas.height = size
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas unavailable')
+  if (!ctx) throw new Error('当前浏览器无法处理图片，请更换浏览器后重试')
 
   const cropSide = Math.min(image.width, image.height) / logoZoom.value
   const sx = (image.width - cropSide) / 2
@@ -222,7 +223,7 @@ const saveLogo = async () => {
     cleanupLogo()
     ElMessage.success('Logo 已上传')
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || error?.message || 'Logo 上传失败')
+    ElMessage.error(getErrorMessage(error, "Logo 上传失败"))
   } finally {
     logoSaving.value = false
   }

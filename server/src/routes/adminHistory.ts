@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
     res.json(results);
   } catch (error) {
     console.error('Error fetching admin history:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
   }
 });
 
@@ -31,7 +31,7 @@ router.post('/', protect, authorize('admin'), async (req, res) => {
   const { title, trem, description, members } = req.body;
 
   if (!title || !members || !Array.isArray(members)) {
-    return res.status(400).json({ error: 'Title and a list of members are required' });
+    return res.status(400).json({ error: '请填写理事会名称并添加成员' });
   }
 
   const connection = await pool.getConnection();
@@ -52,11 +52,11 @@ router.post('/', protect, authorize('admin'), async (req, res) => {
     }
 
     await connection.commit();
-    res.status(201).json({ message: 'Admin history created successfully', termId });
+    res.status(201).json({ message: '理事会记录已新增', termId });
   } catch (error) {
     await connection.rollback();
     console.error('Error creating admin history:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
   } finally {
     connection.release();
   }
@@ -70,7 +70,7 @@ router.put('/:id', protect, authorize('admin'), async (req, res) => {
   const { title, trem, description, members } = req.body;
 
   if (!title || !members || !Array.isArray(members)) {
-    return res.status(400).json({ error: 'Title and a list of members are required' });
+    return res.status(400).json({ error: '请填写理事会名称并添加成员' });
   }
 
   const connection = await pool.getConnection();
@@ -97,14 +97,14 @@ router.put('/:id', protect, authorize('admin'), async (req, res) => {
     }
 
     await connection.commit();
-    res.json({ message: 'Admin history updated successfully' });
+    res.json({ message: '理事会记录已保存' });
   } catch (error) {
     await connection.rollback();
     console.error('Error updating admin history:', error);
     if ((error as Error).message === 'Term not found') {
-      return res.status(404).json({ error: 'Admin term not found' });
+      return res.status(404).json({ error: '该届理事会记录不存在或已被删除，请刷新列表' });
     }
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
   } finally {
     connection.release();
   }
@@ -120,13 +120,13 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
     const [result] = await pool.query('DELETE FROM admin_terms WHERE id = ?', [id]);
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Admin term not found' });
+      return res.status(404).json({ error: '该届理事会记录不存在或已被删除，请刷新列表' });
     }
 
-    res.json({ message: 'Admin term deleted successfully' });
+    res.json({ message: '理事会记录已删除' });
   } catch (error) {
     console.error('Error deleting admin term:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
   }
 });
 

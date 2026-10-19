@@ -8,15 +8,40 @@
         </div>
       </div>
 
-      <el-form :model="loginForm" label-position="top" @submit.prevent>
+      <el-alert
+        v-if="loginError || loginNotice"
+        :title="loginError || loginNotice"
+        :type="loginError ? 'error' : 'warning'"
+        :closable="false"
+        show-icon
+        class="login-feedback"
+        role="alert"
+      />
+      <el-form :model="loginForm" label-position="top" @submit.prevent="onLogin">
         <el-form-item label="账号">
-          <el-input v-model="loginForm.username" autocomplete="username" />
+          <el-input
+            v-model.trim="loginForm.username"
+            autocomplete="username"
+            placeholder="请输入账号"
+            :disabled="loading"
+            @input="loginError = ''"
+          />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="loginForm.password" type="password" show-password autocomplete="current-password" />
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            show-password
+            autocomplete="current-password"
+            placeholder="请输入密码"
+            :disabled="loading"
+            @input="loginError = ''"
+          />
         </el-form-item>
         <div class="actions">
-          <el-button type="primary" :loading="loading" @click="onLogin">登录</el-button>
+          <el-button type="primary" native-type="submit" :loading="loading">{{
+            loading ? '正在登录…' : '登录'
+          }}</el-button>
         </div>
       </el-form>
 
@@ -33,12 +58,17 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import apiClient from '@/api'
+import { getErrorMessage } from '@/feedback'
 
 const router = useRouter()
 const loading = ref(false)
+const route = useRoute()
+const loginError = ref('')
+const loginNotice =
+  route.query.reason === 'session-expired' ? '登录已过期，请重新登录后继续操作' : ''
 
 const loginForm = reactive({
   username: '',
@@ -46,18 +76,20 @@ const loginForm = reactive({
 })
 
 const onLogin = async () => {
+  if (loading.value) return
   if (!loginForm.username || !loginForm.password) {
-    ElMessage.error('请填写账号和密码')
+    loginError.value = !loginForm.username ? '请输入账号' : '请输入密码'
     return
   }
+  loginError.value = ''
   loading.value = true
   try {
     const response = await apiClient.post('/auth/login', loginForm)
     localStorage.setItem('token', response.data.token)
     ElMessage.success('登录成功')
     router.push('/admin')
-  } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || '登录失败')
+  } catch (error) {
+    loginError.value = getErrorMessage(error, '登录未完成，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -69,6 +101,9 @@ const openApplyPage = () => {
 </script>
 
 <style scoped>
+.login-feedback {
+  margin-bottom: 18px;
+}
 .login-shell {
   min-height: 100vh;
   display: grid;

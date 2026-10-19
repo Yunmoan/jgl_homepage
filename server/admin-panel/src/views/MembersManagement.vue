@@ -92,7 +92,7 @@
               :show-file-list="false"
               :http-request="uploadLogo"
               :before-upload="beforeLogoUpload"
-            >
+             :on-error="showUploadError">
               <img v-if="form.logo" :src="formatLogoUrl(form.logo)" class="image" />
               <el-icon v-else class="image-uploader-icon"><Plus /></el-icon>
             </el-upload>
@@ -134,6 +134,8 @@
 </template>
 
 <script setup lang="ts">
+import { showUploadError } from '@/feedback'
+import { getErrorMessage, isDialogDismissed } from '@/feedback'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import apiClient from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -224,7 +226,7 @@ const fetchData = async () => {
       total.value = response.data?.pagination?.total ?? 0
     }
   } catch (error) {
-    ElMessage.error('获取社团列表失败')
+    ElMessage.error(getErrorMessage(error, "获取社团列表失败"))
     tableData.value = []
     total.value = 0
   } finally {
@@ -308,7 +310,7 @@ const uploadLogo = async (options: any) => {
     ElMessage.success('Logo 上传成功')
   } catch (error: any) {
     options.onError?.(error)
-    ElMessage.error(error?.response?.data?.message || 'Logo 上传失败')
+    ElMessage.error(getErrorMessage(error, "Logo 上传失败"))
   } finally {
     uploadLoading.value = false
   }
@@ -338,7 +340,7 @@ const handleSave = async () => {
     dialogVisible.value = false
     fetchData()
   } catch (error) {
-    ElMessage.error('保存失败')
+    ElMessage.error(getErrorMessage(error, "社团资料保存失败，请稍后重试"))
   }
 }
 
@@ -353,7 +355,7 @@ const handleDelete = async (id: number) => {
     ElMessage.success('社团已删除')
     fetchData()
   } catch (error: any) {
-    if (error !== 'cancel') ElMessage.error('删除失败')
+    if (!isDialogDismissed(error)) ElMessage.error(getErrorMessage(error, "社团资料删除失败，请刷新列表后重试"))
   }
 }
 </script>

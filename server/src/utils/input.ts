@@ -11,7 +11,7 @@ export const requiredString = (value: unknown): string | null => {
 export const usernamePattern = /^[A-Za-z][A-Za-z0-9_-]{3,31}$/
 
 export const usernameRuleText =
-  'Username must start with a letter and contain only letters, numbers, underscores, or hyphens, 4-32 characters'
+  '账号需为 4–32 位，以英文字母开头，仅可使用英文字母、数字、下划线或短横线'
 
 export const isValidUsername = (value: unknown): value is string => {
   return typeof value === 'string' && usernamePattern.test(value)

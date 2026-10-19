@@ -37,7 +37,6 @@
                   @input="clearFormError" />
               </label>
             </div>
-            <p v-if="formError" class="form-error">{{ formError }}</p>
           </div>
 
           <div class="form-section">
@@ -83,6 +82,7 @@
             </div>
           </div>
 
+          <ActionFeedback :message="formError" @close="formError = ''" />
           <div class="submit-row">
             <p>提交后将自动登录到审核状态页。后续可访问 admin.hbutu.cn 查看审核结果。</p>
             <button type="submit" class="primary-btn" :disabled="loading">
@@ -108,6 +108,7 @@
               <button v-if="form.clubLogo" type="button" class="ghost-btn danger" @click="clearLogo">移除</button>
             </div>
             <p class="hint">支持 JPG、PNG、WEBP，上传前可在弹窗中裁切并缩放。</p>
+            <ActionFeedback v-if="!logoDialogVisible" :message="logoError" @close="logoError = ''" />
           </div>
 
           <div class="side-block">
@@ -212,6 +213,7 @@
             </div>
           </div>
         </div>
+        <ActionFeedback :message="logoError" @close="logoError = ''" />
         <label class="slider-line">
           <span>缩放</span>
           <input v-model.number="logoZoom" type="range" min="1" max="2.6" step="0.05" />
@@ -233,6 +235,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useReCaptcha } from 'vue-recaptcha-v3'
+import ActionFeedback from '../components/ActionFeedback.vue'
+import { getErrorMessage, readApiResponse } from '../utils/feedback'
 
 interface MeInfo {
   username: string
@@ -271,6 +275,7 @@ const form = reactive({
   applicationReason: '',
 })
 const formError = ref('')
+const logoError = ref('')
 const usernamePattern = /^[A-Za-z][A-Za-z0-9_-]{3,31}$/
 
 const statusLabel = (status: MeInfo['status']) =>
@@ -300,12 +305,13 @@ const handleLogoChange = async (event: Event) => {
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
+  logoError.value = ''
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    alert('Logo 只支持 JPG、PNG、WEBP')
+    logoError.value = '图片格式不支持，请选择 JPG、PNG 或 WebP 文件'
     return
   }
   if (file.size > 5 * 1024 * 1024) {
-    alert('Logo 不能超过 5MB')
+    logoError.value = '图片大小不能超过 5 MB，请压缩后重新选择'
     return
   }
   cleanupLogo()
@@ -335,7 +341,7 @@ const buildLogoBlob = async () => {
   canvas.width = size
   canvas.height = size
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas unavailable')
+  if (!ctx) throw new Error('当前浏览器无法处理图片，请更换浏览器后重试')
 
   const cropSide = Math.min(image.width, image.height) / logoZoom.value
   const sx = (image.width - cropSide) / 2
@@ -346,6 +352,7 @@ const buildLogoBlob = async () => {
 }
 
 const saveLogo = async () => {
+  logoError.value = ''
   logoSaving.value = true
   try {
     const blob = await buildLogoBlob()
@@ -356,14 +363,13 @@ const saveLogo = async () => {
       method: 'POST',
       body: fd,
     })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data?.message || 'Logo 上传失败')
+    const data = await readApiResponse<{ filePath: string }>(response, 'Logo 上传失败，请稍后重试')
     form.clubLogo = data?.filePath || ''
     logoDialogVisible.value = false
     logoSourceUrl.value = ''
     cleanupLogo()
-  } catch (error: any) {
-    alert(error?.message || 'Logo 上传失败')
+  } catch (error) {
+    logoError.value = getErrorMessage(error, 'Logo 上传失败，请稍后重试')
   } finally {
     logoSaving.value = false
   }
@@ -416,9 +422,10 @@ const submitApplication = async () => {
     return
   }
   loading.value = true
+  formError.value = ''
   try {
     if (!recaptcha) {
-      throw new Error('reCAPTCHA 未初始化，请稍后重试')
+      throw new Error('人机验证服务尚未就绪，请稍后重试')
     }
     await recaptcha.recaptchaLoaded()
     const token = await recaptcha.executeRecaptcha('submit_club_application')
@@ -431,10 +438,7 @@ const submitApplication = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, token }),
     })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data?.error || '提交失败')
-    }
+    const data = await readApiResponse<{ token?: string }>(response, '申请提交失败，请稍后重试')
     if (data?.token) {
       localStorage.setItem('token', data.token)
       await loadMe()
@@ -442,8 +446,8 @@ const submitApplication = async () => {
       return
     }
     submitted.value = true
-  } catch (error: any) {
-    alert(error?.message || '提交失败')
+  } catch (error) {
+    formError.value = getErrorMessage(error, '申请提交失败，请稍后重试')
   } finally {
     loading.value = false
   }

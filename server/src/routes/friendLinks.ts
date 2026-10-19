@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
     res.json(rows)
   } catch (error) {
     console.error('Error fetching friend links:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -27,7 +27,7 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
   const safeUrl = requiredString(url)
 
   if (!safeTitle || !safeUrl) {
-    return res.status(400).json({ error: 'Title and URL are required' })
+    return res.status(400).json({ error: '请填写友链名称和链接地址' })
   }
 
   try {
@@ -35,10 +35,10 @@ router.post('/', protect, authorize('admin', 'editor'), async (req, res) => {
       'INSERT INTO friend_links (title, url, logo) VALUES (?, ?, ?)',
       [safeTitle, safeUrl, cleanString(logo)],
     )
-    res.status(201).json({ message: 'Friend link created successfully', insertId: (result as any).insertId })
+    res.status(201).json({ message: '友情链接已新增', insertId: (result as any).insertId })
   } catch (error) {
     console.error('Error creating friend link:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -52,7 +52,7 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
   const safeUrl = requiredString(url)
 
   if (!safeTitle || !safeUrl) {
-    return res.status(400).json({ error: 'Title and URL are required' })
+    return res.status(400).json({ error: '请填写友链名称和链接地址' })
   }
 
   try {
@@ -62,13 +62,13 @@ router.put('/:id', protect, authorize('admin', 'editor'), async (req, res) => {
     )
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Friend link not found' })
+      return res.status(404).json({ error: '该友情链接不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'Friend link updated successfully' })
+    res.json({ message: '友情链接已保存' })
   } catch (error) {
     console.error('Error updating friend link:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -82,13 +82,13 @@ router.delete('/:id', protect, authorize('admin', 'editor'), async (req, res) =>
     const [result] = await pool.query('DELETE FROM friend_links WHERE id = ?', [id])
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Friend link not found' })
+      return res.status(404).json({ error: '该友情链接不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'Friend link deleted successfully' })
+    res.json({ message: '友情链接已删除' })
   } catch (error) {
     console.error('Error deleting friend link:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

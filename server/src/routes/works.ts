@@ -66,7 +66,7 @@ router.get('/', optionalAuth as any, async (req: any, res) => {
     res.json(rows)
   } catch (error) {
     console.error('Error fetching works:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -87,7 +87,7 @@ router.post('/', protect, authorize('admin', 'editor', 'member'), async (req: an
   const featured = req.user?.role === 'admin' ? parseBooleanFlag(featuredRaw) : 0
 
   if (!title) {
-    return res.status(400).json({ error: 'Title is required' })
+    return res.status(400).json({ error: '请填写标题' })
   }
 
   try {
@@ -97,7 +97,7 @@ router.post('/', protect, authorize('admin', 'editor', 'member'), async (req: an
       finalClub = (await resolveMemberClub(req.user.id, club)) || ''
     }
     if (!finalClub) {
-      return res.status(400).json({ error: 'Club is required' })
+      return res.status(400).json({ error: '请选择或填写作品所属社团' })
     }
     const status = req.user?.role === 'admin' ? requestedStatus || 'approved' : 'pending'
     const [result] = await pool.query(
@@ -117,15 +117,15 @@ router.post('/', protect, authorize('admin', 'editor', 'member'), async (req: an
     )
     res
       .status(201)
-      .json({ message: 'Work created successfully', insertId: (result as any).insertId })
+      .json({ message: '作品已提交', insertId: (result as any).insertId })
   } catch (error) {
     console.error('Error creating work:', error)
     if ((error as any)?.code === 'ER_BAD_FIELD_ERROR') {
       return res
         .status(500)
-        .json({ error: 'Database schema outdated: missing column in works table.' })
+        .json({ error: '作品服务暂时不可用，请联系管理员检查服务配置' })
     }
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -146,7 +146,7 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
   const requestedStatus = isWorkStatus((req.body as any)?.status) ? ((req.body as any).status as WorkStatus) : null
 
   if (!title) {
-    return res.status(400).json({ error: 'Title is required' })
+    return res.status(400).json({ error: '请填写标题' })
   }
 
   try {
@@ -155,7 +155,7 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
       finalClub = (await resolveMemberClub(req.user.id, club)) || ''
     }
     if (!finalClub) {
-      return res.status(400).json({ error: 'Club is required' })
+      return res.status(400).json({ error: '请选择或填写作品所属社团' })
     }
     const isAdmin = req.user?.role === 'admin'
     const statusParam = isAdmin ? requestedStatus : 'pending'
@@ -197,13 +197,13 @@ router.put('/:id', protect, authorize('admin', 'editor', 'member'), async (req: 
     const [result] = await pool.query(sql, params)
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Work not found or no permission' })
+      return res.status(404).json({ error: '该作品不存在，或当前账号没有编辑权限' })
     }
 
-    res.json({ message: 'Work updated successfully' })
+    res.json({ message: '作品已保存' })
   } catch (error) {
     console.error('Error updating work:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -215,7 +215,7 @@ router.put('/:id/status', protect, authorize('admin'), async (req: any, res) => 
   const { status } = req.body as { status?: string }
 
   if (!isWorkStatus(status)) {
-    return res.status(400).json({ error: 'Status must be pending, approved, or rejected' })
+    return res.status(400).json({ error: '请选择待审核、通过或驳回状态' })
   }
 
   try {
@@ -229,13 +229,13 @@ router.put('/:id/status', protect, authorize('admin'), async (req: any, res) => 
     )
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Work not found' })
+      return res.status(404).json({ error: '该作品不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'Work status updated', status })
+    res.json({ message: '作品审核状态已更新', status })
   } catch (error) {
     console.error('Error updating work status:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -249,13 +249,13 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
     const [result] = await pool.query('DELETE FROM works WHERE id = ?', [id])
 
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Work not found' })
+      return res.status(404).json({ error: '该作品不存在或已被删除，请刷新列表' })
     }
 
-    res.json({ message: 'Work deleted successfully' })
+    res.json({ message: '作品已删除' })
   } catch (error) {
     console.error('Error deleting work:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 
@@ -269,12 +269,12 @@ router.put('/:id/featured', protect, authorize('admin'), async (req, res) => {
   try {
     const [result] = await pool.query('UPDATE works SET featured = ? WHERE id = ?', [val, id])
     if ((result as any).affectedRows === 0) {
-      return res.status(404).json({ error: 'Work not found' })
+      return res.status(404).json({ error: '该作品不存在或已被删除，请刷新列表' })
     }
-    res.json({ message: 'Featured flag updated', featured: val })
+    res.json({ message: '作品精选状态已更新', featured: val })
   } catch (error) {
     console.error('Error updating featured:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).json({ error: '服务暂时不可用，请稍后重试' })
   }
 })
 

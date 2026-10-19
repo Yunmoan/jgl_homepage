@@ -2,6 +2,101 @@
 
 This document outlines all the publicly accessible API endpoints for the application. "Public" means these endpoints do not require a JWT authentication token.
 
+User-facing `error` and `message` values are returned in Chinese. Invalid login credentials
+return 401 with `账号或密码不正确，请检查后重试`; expired sessions return 401, permission
+errors return 403, and rate limits return 429 with a JSON `error` message.
+An incorrect current password during a password change returns 400 and does not end the session.
+Clients should use status codes for control flow and display the message without relying on its exact wording.
+
+---
+
+## Exhibition calendar
+
+### GET /api/exhibitions/public?year=2026
+
+Returns all exhibitions whose inclusive date range overlaps the requested calendar year,
+ordered by start date and ID. `year` is a four-digit year from 1900 through 2199;
+omitting it selects the current year in Asia/Shanghai.
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "title": "Exhibition name",
+      "start_date": "2026-12-31",
+      "end_date": "2027-01-02",
+      "location": "Venue",
+      "booth": "A01",
+      "participation": "participating",
+      "participation_notes": "Participating clubs, planned activities and other attendance notes",
+      "description": "Exhibition introduction",
+      "link": "https://example.com/event",
+      "source_label": "thonly.cc"
+    }
+  ],
+  "years": [2027, 2026],
+  "source": {
+    "kind": "thonly",
+    "key": "thonly",
+    "label": "thonly.cc",
+    "url": "https://thonly.cc/calendar/",
+    "cache_state": "fresh",
+    "fetched_at": "2026-10-19T13:04:12.768Z",
+    "warning": "",
+    "skipped": 21
+  }
+}
+```
+
+Locally maintained exhibitions have no `source_key`, `source_event_id` or `source_label`.
+Exhibitions read from an external calendar also include `source_key`, `source_event_id`,
+`source_url`, `source_status`, `category`, `qq_group`, and `binding_id` when the
+administrator has attached Gaolian attendance information. `source_label` identifies the
+attribution that clients must display as `数据源来自 <label>`.
+`source.cache_state` is one of `local`, `live`, `fresh`, `stale`, `offline` or `unavailable`.
+When the external source cannot be reached, `warning` explains whether the last successful
+cache or the bundled offline snapshot is being shown; an empty list with no warning means
+there are genuinely no exhibitions for the selected period.
+
+Dates are date-only strings and must not be shifted by timezone conversion.
+`years` includes all years covered by stored exhibitions, the requested year, and the current year.
+`participation` is `undecided`, `participating`, or `not_participating`.
+`participation_notes` is optional public plain text, limited to 2000 UTF-16 code units,
+with line breaks preserved. It is separate from `description`; an omitted, null or blank
+value is stored as an empty string. Homepage cards, standalone cards and calendar details
+display nonempty notes. Create or replace accepts this field; replace can clear it with `""`.
+The standalone calendar shows the full year. The homepage defaults to the current month,
+including exhibitions that overlap either end of that month. Both lists support pagination.
+
+### GET /api/exhibitions/settings
+
+Returns the public homepage display configuration. With no saved configuration it returns
+`{"mode":"current_month","month":null}`. Supported modes are `current_month` (automatic),
+`fixed_month` (a `YYYY-MM` value in `month`) and `year`.
+
+### PUT /api/exhibitions/settings
+
+Administrators can save the same configuration object. A fixed month must be between
+1900-01 and 2199-12; other modes store `month` as `null`. The setting only affects the homepage.
+The configuration is persisted in MySQL and is read again when the homepage is refreshed.
+
+Create (`POST /api/exhibitions`), replace (`PUT /api/exhibitions/:id`) and delete
+(`DELETE /api/exhibitions/:id`) require a Bearer token for a current `admin` account.
+Create and replace accept the fields above except `id`; `title`, both dates and `participation`
+are required. Invalid dates, reversed ranges, invalid statuses and non-HTTP(S) links return 400.
+Unauthenticated writes return 401, non-admin writes return 403, and missing IDs return 404.
+
+Calendar source administration also requires an `admin` token:
+`GET/PUT /api/exhibitions/sources`, `POST /api/exhibitions/sources/refresh`,
+and `GET/POST/PUT/DELETE /api/exhibitions/bindings`. Source configuration includes
+`kind` (`local`, `thonly`, `json`), `label`, HTTPS feed `urls`, `cache_mode`
+(`ttl`, `offline`, `none`) and `cache_ttl_seconds` (1 second through 365 days).
+For `thonly`, the server automatically discovers newly published yearly spreadsheets and
+needs no manual feed maintenance; `GET /api/exhibitions/sources` returns the current list as
+`thonly_urls`. Attendance bindings reference a `source_key` and `source_event_id` and store
+`participation`, `booth` and `participation_notes` independently of the source data.
+
 ---
 
 ## News
@@ -63,7 +158,7 @@ This document outlines all the publicly accessible API endpoints for the applica
 - **Response Body (Success)**:
   ```json
   {
-    "message": "Message created successfully",
+    "message": "留言已提交，审核通过后将公开显示",
     "insertId": 123
   }
   ```
@@ -242,7 +337,7 @@ These endpoints are public but are intended for use by the admin panel.
 - **Response Body (Success)**:
   ```json
   {
-    "message": "User registered successfully"
+    "message": "申请已提交，请等待管理员审核"
   }
   ```
 

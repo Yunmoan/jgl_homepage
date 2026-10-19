@@ -22,6 +22,9 @@ export default defineConfig({
     },
   },
   server: {
+    fs: {
+      allow: [fileURLToPath(new URL('../..', import.meta.url))],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

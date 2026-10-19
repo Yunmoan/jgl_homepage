@@ -4,19 +4,6 @@ import type { RouteLocationNormalized } from 'vue-router'
 // Import components
 import Login from '@/views/Login.vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
-import Dashboard from '@/views/Dashboard.vue'
-import ApplicationStatus from '@/views/ApplicationStatus.vue'
-import NewsManagement from '@/views/NewsManagement.vue'
-import MembersManagement from '@/views/MembersManagement.vue'
-import WorksManagement from '@/views/WorksManagement.vue'
-import HistoryManagement from '@/views/HistoryManagement.vue'
-import FameMembersManagement from '@/views/FameMembersManagement.vue'
-import AdminHistoryManagement from '@/views/AdminHistoryManagement.vue'
-import FriendLinksManagement from '@/views/FriendLinksManagement.vue'
-import MessagesManagement from '@/views/MessagesManagement.vue'
-import UserManagement from '@/views/UserManagement.vue'
-import AnnouncementsManagement from '@/views/AnnouncementsManagement.vue'
-import SystemInfo from '@/views/SystemInfo.vue'
 
 const validRoles = ['admin', 'editor', 'viewer', 'member'] as const
 
@@ -50,81 +37,93 @@ const routes = [
       {
         path: 'dashboard',
         name: 'admin-dashboard',
-        component: Dashboard,
+        component: () => import('@/views/Dashboard.vue'),
         meta: { title: '概览', roles: ['admin', 'editor', 'member'] },
       },
       {
         path: 'application',
         name: 'admin-application',
-        component: ApplicationStatus,
+        component: () => import('@/views/ApplicationStatus.vue'),
         meta: { title: '入驻申请', roles: ['viewer'] },
       },
       {
         path: 'news',
         name: 'admin-news',
-        component: NewsManagement,
+        component: () => import('@/views/NewsManagement.vue'),
         meta: { title: '新闻管理', roles: ['admin', 'editor', 'member'] },
       },
       {
         path: 'members',
         name: 'admin-members',
-        component: MembersManagement,
+        component: () => import('@/views/MembersManagement.vue'),
         meta: { title: '成员管理', roles: ['admin', 'editor'] },
+      },
+      {
+        path: 'exhibitions',
+        name: 'admin-exhibitions',
+        component: () => import('@/views/ExhibitionsManagement.vue'),
+        meta: { title: '展会日历', roles: ['admin'] },
       },
       {
         path: 'works',
         name: 'admin-works',
-        component: WorksManagement,
+        component: () => import('@/views/WorksManagement.vue'),
         meta: { title: '作品管理', roles: ['admin', 'editor', 'member'] },
       },
       {
         path: 'history',
         name: 'admin-history-events',
-        component: HistoryManagement,
+        component: () => import('@/views/HistoryManagement.vue'),
         meta: { title: '历史事件', roles: ['admin', 'editor'] },
       },
       {
         path: 'fame-members',
         name: 'admin-fame-members',
-        component: FameMembersManagement,
+        component: () => import('@/views/FameMembersManagement.vue'),
         meta: { title: '名人堂', roles: ['admin', 'editor'] },
       },
       {
         path: 'admin-history',
         name: 'admin-admin-history',
-        component: AdminHistoryManagement,
+        component: () => import('@/views/AdminHistoryManagement.vue'),
         meta: { title: '理事会', roles: ['admin'] },
       },
       {
         path: 'friend-links',
         name: 'admin-friend-links',
-        component: FriendLinksManagement,
+        component: () => import('@/views/FriendLinksManagement.vue'),
         meta: { title: '友情链接', roles: ['admin', 'editor'] },
       },
       {
         path: 'messages',
         name: 'admin-messages',
-        component: MessagesManagement,
+        component: () => import('@/views/MessagesManagement.vue'),
         meta: { title: '留言管理', roles: ['admin', 'editor'] },
       },
       {
         path: 'announcements',
         name: 'admin-announcements',
-        component: AnnouncementsManagement,
+        component: () => import('@/views/AnnouncementsManagement.vue'),
         meta: { title: '公告管理', roles: ['admin', 'editor'] },
       },
       {
         path: 'users',
         name: 'admin-users',
-        component: UserManagement,
+        component: () => import('@/views/UserManagement.vue'),
         meta: { title: '用户管理', roles: ['admin'] },
       },
       {
         path: 'system-info',
         name: 'admin-system-info',
-        component: SystemInfo,
+        component: () => import('@/views/SystemInfo.vue'),
         meta: { title: '系统信息', roles: ['admin', 'editor', 'member'] },
-      }
+      },
+      {
+        path: 'system-settings',
+        name: 'admin-system-settings',
+        component: () => import('@/views/SystemSettings.vue'),
+        meta: { title: '系统设置', roles: ['admin'] },
+      },
     ],
   },
   // Redirect root to login

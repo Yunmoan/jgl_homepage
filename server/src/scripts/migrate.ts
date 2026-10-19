@@ -3,9 +3,11 @@ import fs from 'fs/promises'
 import path from 'path'
 
 async function migrate() {
+  let acquiredConnection: Awaited<ReturnType<typeof pool.getConnection>> | undefined
   try {
     console.log('Starting database migration...')
     const connection = await pool.getConnection()
+    acquiredConnection = connection
 
     const sqlFilePath = path.join(__dirname, '..', '..', 'sql', 'init.sql')
     const sql = await fs.readFile(sqlFilePath, 'utf-8')
@@ -288,11 +290,12 @@ async function migrate() {
     `)
     console.log('Ensured page_views table')
 
-    connection.release()
     console.log('Database migration completed successfully.')
   } catch (error) {
     console.error('Error during database migration:', error)
+    process.exitCode = 1
   } finally {
+    acquiredConnection?.release()
     await pool.end()
   }
 }
